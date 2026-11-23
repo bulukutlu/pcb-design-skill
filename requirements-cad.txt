@@ -1,0 +1,3 @@
+# Optional and large (several hundred MB): parametric CAD for recreating a 3D STEP
+# model from a datasheet drawing. Installed by `install.sh --with-cad`.
+cadquery

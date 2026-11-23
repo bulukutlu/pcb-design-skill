@@ -55,6 +55,12 @@ a calculation, a simulation, or a standard). "Because it is common" is not a rea
   KiCad 11 — do not write new code against it.
 - No official schematic API in KiCad 10: edit `.kicad_sch` S-expressions carefully
   (kicad-skip / kicad-sch-api) with KiCad *closed* or reload afterwards.
+- **Calculation and simulation tools** (ngspice, PySpice, numpy/scipy/matplotlib,
+  PyIBIS-AMI, kicad-python; optionally Gmsh, Elmer, openEMS) are set up by this
+  repository's `install.sh`. The Python ones live in their own environment; its `bin`
+  folder is `PCB_TOOLS_BIN` in `~/.config/pcb-design/krt.env`. At the start of G3 and
+  G8 run `install.sh --check`, and if a tool a required check needs is missing, tell
+  the user which checks that blocks before going on.
 - Tool survey and alternatives: `references/tooling-survey.md`.
   Installation: `references/install-quickstart.md`.
 
@@ -151,6 +157,8 @@ protection, front-ends, filters, HV supply, references, oscillators):
   hot-plug inrush, open feedback resistor, loss of bias.
 - Tolerance: Monte Carlo and temperature corners; worst case for dividers/references.
 Record model sources/versions, stimulus, pass/fail criterion and the plot under `sim/`.
+The full list of required simulations and calculations is in
+`references/design-report.md`; work through its tables, do not pick from memory.
 Exit: every simulated block passes its criterion, or the design is changed.
 
 ### G4 — Floorplan (human checkpoint)
@@ -224,6 +232,10 @@ Follow `references/validation-tools.md`:
 Exit: a validation table with margin per check.
 
 ### G9 — Outputs and release (human checkpoint)
+Compile **`design-report.md`** from `design-notes.md` following
+`references/design-report.md`: every calculation and simulation that applies to the
+board, each with its number, limit, margin and verdict, and the tool versions used. A
+check whose tool is missing is reported as *not run*, never as passed.
 Generate with KiBot or kicad-cli: gerbers + drill (fab's format), IPC-D-356 netlist,
 pick-and-place, BOM (MPN + alternates), fab drawing (stackup, finish, impedance notes,
 coating), assembly drawing, schematic PDF, STEP (complete: no component without a
@@ -311,6 +323,7 @@ document and the sub-skills; do not reconstruct its contents from memory.
 | `references/dfm-fab.md` | Fab rules, stackups, DRC presets, assembly, parts |
 | `references/dft-bringup.md` | Testpoints, LEDs, boot/reset, debug, bring-up plan |
 | `references/simulation-playbook.md` | SPICE in KiCad/ngspice, failure cases, Monte Carlo |
+| `references/design-report.md` | Which calculations and simulations are required, with which tool, and the report layout |
 | `references/validation-tools.md` | IBIS/SI, PDN, thermal, STA before ordering |
 | `references/tooling-survey.md` | Which tool/plugin/MCP server for a job |
 | `references/install-quickstart.md` | Setting up the machine |

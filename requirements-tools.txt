@@ -1,9 +1,14 @@
-# Optional Python tools the pcb-design workflow uses outside routing.
-# Install into a venv of your own, e.g.
-#   python3 -m venv ~/venvs/pcb && ~/venvs/pcb/bin/pip install -r requirements-tools.txt
+# Python tools for the calculations and simulations the design report requires
+# (skills/pcb-design/references/design-report.md). install.sh puts them in their own
+# environment at ~/.local/share/pcb-design/venv; nothing goes into KiCad's bundled
+# Python or your system Python.
+#
+# By hand:
+#   python3 -m venv ~/.local/share/pcb-design/venv
+#   ~/.local/share/pcb-design/venv/bin/pip install -r requirements-tools.txt
+numpy             # PDN impedance sweeps, timing and tolerance scripts
+scipy
+matplotlib        # plots for the report
+PySpice           # drive ngspice from Python (needs the ngspice program itself)
+pyibis-ami        # IBIS-AMI SerDes models, headless
 kicad-python      # IPC API to a running KiCad (import kipy)
-numpy
-matplotlib
-PySpice           # ngspice from Python (G3 simulation)
-pyibis-ami        # IBIS-AMI models (G8 signal integrity)
-cadquery          # recreating a 3D STEP model from a datasheet drawing

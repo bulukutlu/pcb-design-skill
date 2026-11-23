@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Install the pcb-design skills for Claude Code and set up what they depend on.
 
-    python3 install.py            install skills + router environment
-    python3 install.py --check    report what is present / missing; change nothing
-    python3 install.py --zip      build dist/pcb-design.zip (a Claude plugin upload)
+    python3 install.py                 install skills, the router environment and the
+                                       Python calculation/simulation tools
+    python3 install.py --system-tools  also install ngspice, Gmsh and gerbv with the
+                                       system package manager, where that needs no
+                                       administrator rights (Homebrew)
+    python3 install.py --check         report what is present / missing; change nothing
+    python3 install.py --zip           build dist/pcb-design.zip (a Claude plugin upload)
 
-Needs only Python 3.9+ and, for the router environment, network access to PyPI.
-It never installs KiCad or the KiCadRoutingTools plugin and never touches KiCad's
-bundled Python; it tells you what is missing and how to get it.
+Needs only Python 3.9+ and network access to PyPI. It never installs KiCad or the
+KiCadRoutingTools plugin, never touches KiCad's bundled Python or your system Python,
+and never runs anything with sudo; it tells you what is missing and how to get it.
 """
 import argparse
 import filecmp
@@ -25,6 +29,18 @@ PLUGIN_ID = 'com_github_drandyhaas_kicadroutingtools'
 ENV_FILE = os.path.join(HOME, '.config', 'pcb-design', 'krt.env')
 DEFAULT_VENV = os.path.join(HOME, '.local', 'share', 'kicad-routing-tools', 'venv')
 DEFAULT_DEST = os.path.join(HOME, '.claude', 'skills')
+DEFAULT_TOOLS_VENV = os.path.join(HOME, '.local', 'share', 'pcb-design', 'venv')
+# import name -> what the design report needs it for
+PY_TOOLS = [('numpy', 'PDN, timing and tolerance scripts'), ('scipy', 'PDN and filter calculations'),
+            ('matplotlib', 'plots for the report'), ('PySpice', 'ngspice from Python'),
+            ('pyibisami', 'IBIS-AMI SerDes models'), ('kipy', 'KiCad IPC API')]
+# program -> (what it is for, Homebrew formula, apt package)
+SYS_TOOLS = [('ngspice', 'SPICE simulations (G3) and PDN sweeps', 'ngspice', 'ngspice'),
+             ('gmsh', 'meshing for thermal FEM (G8)', 'gmsh', 'gmsh'),
+             ('gerbv', 'checking gerbers before ordering (G9)', 'gerbv', 'gerbv')]
+# reported only: no simple package on every system
+OTHER_TOOLS = [('ElmerSolver', 'thermal FEM solver (G8), only when the hand estimate is marginal'),
+               ('kibot', 'fab output generation (G9)'), ('kikit', 'panelisation (G9)')]
 WIN = os.name == 'nt'
 
 OK, WARN, MISS = 'ok     ', 'warn   ', 'MISSING'
@@ -115,6 +131,126 @@ def find_tool(name, extra=()):
     return None
 
 
+def tools_python(args):
+    return venv_python(args.tools_venv or read_env().get('PCB_TOOLS_VENV') or DEFAULT_TOOLS_VENV)
+
+
+def py_tools_missing(python):
+    if not os.path.isfile(python):
+        return [n for n, _ in PY_TOOLS]
+    code = ("import importlib.util\n"
+            "print('MISSING=' + ','.join(m for m in %r if importlib.util.find_spec(m) is None))"
+            % ([n for n, _ in PY_TOOLS],))
+    try:
+        out = subprocess.run([python, '-c', code], capture_output=True, text=True, timeout=120).stdout
+    except Exception:       # noqa: BLE001
+        return [n for n, _ in PY_TOOLS]
+    if 'MISSING=' not in out:
+        return [n for n, _ in PY_TOOLS]
+    return [m for m in out.split('MISSING=', 1)[1].strip().split(',') if m]
+
+
+def system_tools_command(missing):
+    """-> (command list or None, text to show). Only Homebrew is ever run by us."""
+    if not missing:
+        return None, ''
+    if shutil.which('brew'):
+        return ['brew', 'install'] + [f for _, _, f, _ in missing], 'brew install ' + ' '.join(f for _, _, f, _ in missing)
+    if shutil.which('apt-get'):
+        return None, 'sudo apt install ' + ' '.join(a for _, _, _, a in missing)
+    if shutil.which('dnf'):
+        return None, 'sudo dnf install ' + ' '.join(a for _, _, _, a in missing)
+    if WIN:
+        return None, 'ngspice: ngspice.sourceforge.io; Gmsh: gmsh.info; gerbv: use KiCad GerbView instead'
+    return None, 'install with your package manager: ' + ' '.join(n for n, _, _, _ in missing)
+
+
+def check_tools(args):
+    """Report the calculation and simulation tools. Returns the number missing."""
+    print('calculation and simulation tools (skills/pcb-design/references/design-report.md):')
+    n = 0
+    py = tools_python(args)
+    missing = py_tools_missing(py)
+    if os.path.isfile(py) and not missing:
+        say(OK, 'Python tools: ' + ', '.join(name for name, _ in PY_TOOLS), os.path.dirname(os.path.dirname(py)))
+    else:
+        n += len(missing)
+        for name, why in PY_TOOLS:
+            if name in missing:
+                say(MISS, name, why + ' (run install.py)')
+    absent = [t for t in SYS_TOOLS if not shutil.which(t[0])]
+    for name, why, _, _ in SYS_TOOLS:
+        if shutil.which(name):
+            say(OK, name)
+        else:
+            n += 1
+            say(MISS, name, why)
+    _, text = system_tools_command(absent)
+    if text:
+        print('            to install: %s%s' % (text, '   (or: install.py --system-tools)' if shutil.which('brew') else ''))
+    for name, why in OTHER_TOOLS:
+        say(OK if shutil.which(name) else '-      ', name, '' if shutil.which(name) else why)
+    print('            Elmer, openEMS, KiBot, KiKit: see skills/pcb-design/references/install-quickstart.md')
+    return n
+
+
+def make_tools(args):
+    """Python calculation/simulation tools in their own environment."""
+    venv = args.tools_venv or DEFAULT_TOOLS_VENV
+    py = venv_python(venv)
+    if not os.path.isfile(py):
+        print('creating Python environment for calculation tools at %s' % venv)
+        os.makedirs(os.path.dirname(venv), exist_ok=True)
+        subprocess.check_call([sys.executable, '-m', 'venv', venv])
+    files = ['requirements-tools.txt'] + (['requirements-cad.txt'] if args.with_cad else [])
+    wanted = []
+    for fn in files:
+        for line in open(os.path.join(HERE, fn), encoding='utf-8'):
+            line = line.split('#', 1)[0].strip()
+            if line:
+                wanted.append(line)
+    if py_tools_missing(py) or args.force or args.with_cad:
+        failed = []
+        for pkg in wanted:      # one at a time: one failing package must not block the rest
+            print('  pip install %s' % pkg)
+            r = subprocess.run([py, '-m', 'pip', 'install', '--quiet', '--disable-pip-version-check', pkg])
+            if r.returncode:
+                failed.append(pkg)
+        if failed:
+            print('  could not install: %s (the checks that need them will be reported as not run)'
+                  % ', '.join(failed))
+    return venv
+
+
+def make_system_tools(args):
+    absent = [t for t in SYS_TOOLS if not shutil.which(t[0])]
+    cmd, text = system_tools_command(absent)
+    if not absent:
+        return
+    if cmd and args.system_tools:
+        print('running: %s' % text)
+        subprocess.call(cmd)
+    elif args.system_tools:
+        print('cannot install system tools without administrator rights; run this yourself:\n  %s' % text)
+
+
+def write_env(krt, venv, tools_venv):
+    old = read_env()
+    lines = ['# written by pcb-design install.py on %s; read by the skills' % time.strftime('%Y-%m-%d')]
+    if krt:
+        ver = ''
+        if os.path.isfile(os.path.join(krt, 'VERSION')):
+            ver = open(os.path.join(krt, 'VERSION')).read().strip()
+        lines += ['KRT_ROOT=%s' % krt, 'KRT_BIN=%s' % venv_bin(venv), 'KRT_VENV=%s' % venv, 'KRT_VERSION=%s' % ver]
+    tools_venv = tools_venv or old.get('PCB_TOOLS_VENV')
+    if tools_venv and os.path.isdir(tools_venv):
+        lines += ['PCB_TOOLS_BIN=%s' % venv_bin(tools_venv), 'PCB_TOOLS_VENV=%s' % tools_venv]
+    os.makedirs(os.path.dirname(ENV_FILE), exist_ok=True)
+    with open(ENV_FILE, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(lines) + '\n')
+    print('wrote %s' % ENV_FILE)
+
+
 def check(args):
     """Print a status report. Returns True when everything required is in place."""
     good = True
@@ -183,9 +319,10 @@ def check(args):
     else:
         good = False
         say(MISS, 'kicad-cli', 'install KiCad 10 (kicad.org); see skills/pcb-design/references/install-quickstart.md')
-    print('optional tools (see skills/pcb-design/references/install-quickstart.md):')
-    for tool in ('ngspice', 'kibot', 'kikit', 'gerbv'):
-        say(OK if shutil.which(tool) else '-      ', tool)
+    n = check_tools(args)
+    if n:
+        print('%d calculation/simulation tool(s) missing: the design-report checks that need them '
+              'cannot be run until they are installed.' % n)
     return good
 
 
@@ -207,16 +344,7 @@ def make_env(args):
     if not krt:
         print('KiCadRoutingTools not found: the environment is ready, but the sub-skills stay '
               'disabled until the plugin is installed and install.py is run again.')
-        return
-    ver = ''
-    if os.path.isfile(os.path.join(krt, 'VERSION')):
-        ver = open(os.path.join(krt, 'VERSION')).read().strip()
-    os.makedirs(os.path.dirname(ENV_FILE), exist_ok=True)
-    with open(ENV_FILE, 'w', encoding='utf-8') as f:
-        f.write('# written by pcb-design install.py on %s; read by the sub-skill launchers\n'
-                % time.strftime('%Y-%m-%d'))
-        f.write('KRT_ROOT=%s\nKRT_BIN=%s\nKRT_VENV=%s\nKRT_VERSION=%s\n' % (krt, venv_bin(venv), venv, ver))
-    print('wrote %s' % ENV_FILE)
+    return krt, venv
 
 
 def install_skills(args):
@@ -265,6 +393,12 @@ def main():
     ap.add_argument('--skills-only', action='store_true', help='copy skills, do not touch the router environment')
     ap.add_argument('--force', action='store_true', help='replace installed skills that differ (old copy is backed up)')
     ap.add_argument('--skip', action='append', default=[], metavar='SKILL', help='do not install this skill (repeatable)')
+    ap.add_argument('--system-tools', action='store_true',
+                    help='also install ngspice, Gmsh and gerbv with Homebrew; elsewhere print the command to run')
+    ap.add_argument('--no-tools', action='store_true', help='skip the Python calculation/simulation tools')
+    ap.add_argument('--with-cad', action='store_true', help='also install CadQuery (large) for recreating 3D models')
+    ap.add_argument('--tools-venv', metavar='PATH',
+                    help='where the calculation tools environment lives (default %s)' % DEFAULT_TOOLS_VENV)
     ap.add_argument('--krt', metavar='PATH', help='KiCadRoutingTools folder, if it is not in a standard KiCad plugin location')
     ap.add_argument('--venv', metavar='PATH', help='where the router Python environment lives (default %s)' % DEFAULT_VENV)
     ap.add_argument('--dest', metavar='DIR', default=DEFAULT_DEST, help='skills folder (default %s)' % DEFAULT_DEST)
@@ -280,7 +414,10 @@ def main():
         print('installing skills into %s' % a.dest)
         install_skills(a)
     if not a.skills_only:
-        make_env(a)
+        krt, venv = make_env(a)
+        tools_venv = None if a.no_tools else make_tools(a)
+        make_system_tools(a)
+        write_env(krt, venv, tools_venv)
     print()
     return 0 if check(a) else 1
 

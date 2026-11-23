@@ -6,8 +6,9 @@ Check versions after install: `kicad-cli version`, `ngspice --version`, `kibot -
 ## Fast path
 From a clone of this repository:
 ```bash
-./install.sh            # installs the skills, finds KiCadRoutingTools, builds its Python environment
-./install.sh --check    # reports what is present and what is missing, changes nothing
+./install.sh                 # skills, KiCadRoutingTools' Python environment, Python calculation tools
+./install.sh --system-tools  # the same, plus ngspice, Gmsh and gerbv (Homebrew; elsewhere prints the command)
+./install.sh --check         # reports what is present and what is missing, changes nothing
 ```
 `install.sh` needs only `python3` (3.9 or newer) and network access to PyPI. It does
 not install KiCad or the KiCadRoutingTools plugin; it tells you if they are missing.
@@ -21,8 +22,11 @@ What it sets up, and how to do each step by hand, is in the repository `README.m
 - The router's Python: a venv holding numpy, scipy, shapely and Pillow
   (`requirements.txt`), created by `install.sh` at
   `~/.local/share/kicad-routing-tools/venv`. The sub-skills put it first on `PATH`.
-- Your own Python (venv/pipx) runs kicad-python (IPC), KiBot, KiKit, PyIBIS-AMI,
-  gerber2ems, scripts (`requirements-tools.txt`).
+- The calculation tools' Python: a second venv with numpy, scipy, matplotlib, PySpice,
+  PyIBIS-AMI and kicad-python (`requirements-tools.txt`), created by `install.sh` at
+  `~/.local/share/pcb-design/venv`. Its `bin` folder is `PCB_TOOLS_BIN` in
+  `~/.config/pcb-design/krt.env`. KiBot, KiKit and gerber2ems are installed by hand
+  with pipx as shown below.
 - The IPC API needs KiCad running with Preferences → Plugins → "Enable KiCad API" on.
 
 ## Linux (Ubuntu / Debian)

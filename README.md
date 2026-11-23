@@ -48,13 +48,23 @@ On Windows run `python install.py` instead. The installer:
 2. finds KiCadRoutingTools in KiCad's plugin folder;
 3. creates a Python environment for the router at
    `~/.local/share/kicad-routing-tools/venv` and installs `requirements.txt` into it;
-4. writes `~/.config/pcb-design/krt.env`, which tells the launchers where the plugin
-   and that environment are;
-5. prints a status report.
+4. creates a second environment for the calculation and simulation tools at
+   `~/.local/share/pcb-design/venv` and installs `requirements-tools.txt` into it;
+5. writes `~/.config/pcb-design/krt.env`, which tells the skills where the plugin
+   and both environments are;
+6. prints a status report.
 
-It does not install KiCad or the KiCadRoutingTools plugin, and it does not touch
-KiCad's bundled Python or your system Python. Run it again after updating KiCad or
-the plugin.
+It does not install KiCad or the KiCadRoutingTools plugin, does not touch KiCad's
+bundled Python or your system Python, and never uses `sudo`. Run it again after
+updating KiCad or the plugin.
+
+```bash
+./install.sh --system-tools
+```
+
+`--system-tools` additionally installs ngspice, Gmsh and gerbv. With Homebrew it
+runs `brew install` for the ones that are missing; on systems where that would need
+administrator rights it prints the command for you to run.
 
 ```bash
 ./install.sh --check
@@ -63,7 +73,8 @@ the plugin.
 `--check` prints the same report and changes nothing. Other options: `--force`
 (replace installed skills that differ; the old copy is backed up under
 `~/.config/pcb-design/backup/`), `--skip SKILL`, `--krt PATH`, `--venv PATH`,
-`--dest DIR`, `--env-only`, `--skills-only`, `--zip`.
+`--dest DIR`, `--env-only`, `--skills-only`, `--no-tools`, `--with-cad`,
+`--tools-venv PATH`, `--zip`.
 
 ## Dependencies
 
@@ -105,10 +116,30 @@ Why a separate environment: KiCad's bundled Python is meant for KiCad's own plug
 and, on macOS, ships without numpy, so KiCadRoutingTools' command-line tools do not
 run under it.
 
-Optional tools for the later gates of the workflow (simulation, fab outputs,
-panelisation, signal integrity) are listed with per-OS commands in
-[install-quickstart.md](skills/pcb-design/references/install-quickstart.md). Their
-Python packages are in `requirements-tools.txt`.
+### Calculation and simulation tools
+
+The workflow ends with a design report
+([design-report.md](skills/pcb-design/references/design-report.md)) that lists every
+required calculation and simulation with its tool. A check whose tool is missing is
+reported as not run, so install what your board needs:
+
+| Tool | Used for | Installed by |
+|---|---|---|
+| numpy, scipy, matplotlib | PDN impedance, timing, tolerance scripts, plots | `./install.sh` |
+| PySpice | Driving ngspice from Python | `./install.sh` |
+| pyibis-ami | SerDes IBIS-AMI models | `./install.sh` |
+| kicad-python | KiCad IPC API | `./install.sh` |
+| ngspice | SPICE: nominal, failure cases, Monte Carlo, PDN sweeps | `./install.sh --system-tools`, or `brew install ngspice` / `sudo apt install ngspice` |
+| Gmsh | Meshing for thermal FEM | `./install.sh --system-tools`, or `brew install gmsh` / `sudo apt install gmsh` |
+| gerbv | Checking gerbers before ordering | `./install.sh --system-tools`, or `brew install gerbv` / `sudo apt install gerbv` |
+| CadQuery | Recreating a 3D STEP model from a datasheet drawing | `./install.sh --with-cad` (several hundred MB) |
+| Elmer | Thermal FEM solver, only when the hand estimate is marginal | By hand, see below |
+| openEMS + gerber2ems | EM simulation of vias and launches | By hand, see below |
+| KiBot, KiKit | Fab outputs, panelisation | By hand, see below |
+
+KiCad's own Calculator and its embedded ngspice (with KIBIS for IBIS models) come
+with KiCad. Per-OS commands for the by-hand tools are in
+[install-quickstart.md](skills/pcb-design/references/install-quickstart.md).
 
 ## Use
 
@@ -157,8 +188,9 @@ nets instead.
 
 ## Not verified
 
-- The installer was tested on macOS (Apple silicon) only. The Linux and Windows
-  plugin locations in `install.py` are from KiCad's documentation, not from a run.
+- The installer was tested on macOS (Apple silicon) with Homebrew only. The Linux
+  and Windows plugin locations in `install.py` are from KiCad's documentation, not
+  from a run, and the `apt` / `dnf` commands it prints were not executed.
 - The sub-skills were checked to load and to start KiCadRoutingTools' tools. None
   has been run through a complete placement or routing job under these launchers.
 - The launchers were written against KiCadRoutingTools 0.23.7.
