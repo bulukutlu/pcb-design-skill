@@ -32,6 +32,17 @@ a calculation, a simulation, or a standard). "Because it is common" is not a rea
 7. **Verify, don't recall.** Re-check fab capability pages, part availability, tool
    versions and EU regulatory dates at run time when you have web access; these change.
 
+8. **Show, don't tell.** Every report and document written for a person (design
+   report, README, test records, summaries) is a Markdown or HTML file built around
+   embedded figures: renders, schematic sheets, layer images, plots, diagrams, tables.
+   Prose only carries the decision and the reason. No walls of text. See
+   `references/design-report.md` §0 and `scripts/report_assets.py`.
+9. **One project layout, under version control.** Every board uses the folder structure
+   in `references/project-structure.md`, created by `scripts/new_project.py`. Released
+   manufacturing data is frozen per revision and tagged.
+10. **Offer what the user may not know to ask for.** Present the optional studies in
+    `references/optional-studies.md` at G0 and again at G8; run only what is chosen.
+
 ## Tooling facts (KiCad 10, late 2026)
 
 - KiCad 10 has **no built-in full-board autorouter** (only "Attempt Finish Selected",
@@ -66,8 +77,11 @@ a calculation, a simulation, or a standard). "Because it is common" is not a rea
 
 ## The gated workflow
 
-Keep a `design-notes.md` in the project root. Each gate appends its decisions,
-calculations, and results there. This is the design record a reviewer reads.
+Start by creating or adopting the project folder (`references/project-structure.md`,
+`scripts/new_project.py`). Keep `docs/design-notes.md` as the working log: each gate
+appends its decisions, calculations and results there. Update `STATUS.md` whenever a gate
+closes or reopens; read it first when resuming. If any part of the board is flexible,
+read `references/flex-fpc.md` before G1.
 
 ### G0 — Requirements
 Collect before you draw anything. Ask the user for what is missing; do not guess
@@ -85,7 +99,14 @@ items that change the architecture.
 - Fab and assembler (e.g. JLCPCB, PCBWay, Eurocircuits, Aisler, Multi-CB), quantity,
   budget, lead time, who solders.
 - Test / bring-up needs: programming method, debug access, production test.
-Exit: a requirements table in `design-notes.md`, confirmed by the user.
+- Identity for the silkscreen and documents: designer name as it should appear,
+  organisation, logo file, and where the repository will live (and whether it is
+  public or private).
+- Number each requirement (R1, R2, ...): the test plan traces to these numbers.
+- **Offer the optional studies** (`references/optional-studies.md`) as a multi-select
+  question and record what was chosen and declined.
+Exit: a requirements table in `design-notes.md`, confirmed by the user; project folder
+created; optional studies chosen.
 
 ### G1 — Architecture, fab and stackup
 - Block diagram and power tree (each rail: source, regulator type, current, noise
@@ -117,8 +138,16 @@ Follow `references/schematic-style.md` strictly. Summary:
   boot buttons/straps, debug header, 0 Ω/jumper rail isolation, current shunt.
 - After **each sheet**: export SVG (`kicad-cli sch export svg`), look at it, and run
   `python scripts/sch_lint.py <file.kicad_sch>`. Fix findings before the next sheet.
+- Give every symbol the fields `MPN` and `Manufacturer`, and distributor order codes
+  where known (`LCSC`, `Mouser`, `DigiKey`, `Farnell`); the BOM links are built from them.
+- Run the datasheet check per IC and the mating check for every connector that meets
+  another board, cable or flex (`references/verification.md` §1 and §3,
+  `scripts/mating_check.py`).
+- Draft `testing/test-plan.md` now, so every limit in it has a testpoint
+  (`references/test-plan.md`).
 Exit: ERC clean (`kicad-cli sch erc --exit-code-violations`) with justified waivers only,
-lint clean, sheet PDFs reviewed by the user (**human checkpoint**).
+lint clean, datasheet and mating tables complete, sheet PDFs reviewed by the user
+(**human checkpoint**).
 
 ### 3D models (every external component)
 Every component that does not come from the standard KiCad library needs a 3D STEP
@@ -218,7 +247,14 @@ Then pour planes, stitch, add teardrops, check return paths.
 - `/review-routed-board` for the post-route QA pass (connectivity, orphan stubs,
   length-match groups, return vias, pair gaps and polarity).
 - DFM checklist (`references/dfm-fab.md`), DFT coverage (testpoint per key net/rail),
-  silkscreen readability, polarity marks, fiducials, assembly side.
+  polarity marks, fiducials, assembly side.
+- **Silkscreen** designed to `references/silkscreen.md`: identity block (name, revision
+  and date from text variables, designer, organisation, logo), QR code to this
+  revision's documentation (`scripts/silk_art.py`), functional labels on connectors,
+  testpoints, LEDs and switches, required marks. `scripts/silk_lint.py` passes and the
+  user has seen a render of both sides.
+- Footprint check for every non-library footprint and connector, and the mating check
+  again on the finished layout (`references/verification.md` §2, §3).
 - Safety/EMC layout checklist (`references/emc-precompliance.md`, `references/hv-safety.md`).
 
 ### G8 — Pre-order validation
@@ -236,10 +272,23 @@ Compile **`design-report.md`** from `design-notes.md` following
 `references/design-report.md`: every calculation and simulation that applies to the
 board, each with its number, limit, margin and verdict, and the tool versions used. A
 check whose tool is missing is reported as *not run*, never as passed.
-Generate with KiBot or kicad-cli: gerbers + drill (fab's format), IPC-D-356 netlist,
-pick-and-place, BOM (MPN + alternates), fab drawing (stackup, finish, impedance notes,
-coating), assembly drawing, schematic PDF, STEP (complete: no component without a
-model), interactive HTML BOM, bring-up procedure. Check the gerbers in a viewer. The user approves before any order.
+It is a visual document: generate its figures with `scripts/report_assets.py` and lead
+every section with one.
+1. `scripts/bom_sources.py` writes `docs/bom.md` / `bom.html` with links at Mouser,
+   DigiKey, Farnell, LCSC and Octopart for every line; do the part risk check
+   (`references/verification.md` §6). No fitted line without an MPN; single-source
+   lines listed as risks.
+2. `scripts/release.py <Project> --rev <X>` freezes `manufacturing/rev-<X>/` (gerbers,
+   drill, placement, IPC-D-356 netlist, BOM, schematic PDF, STEP, DRC report, checksums,
+   order record). Add what it does not make: fab drawing (stackup, finish, impedance
+   notes, coating), assembly drawing, interactive HTML BOM.
+3. Run the placement-file and manufacturing-data checks on that folder
+   (`references/verification.md` §4, §5).
+4. Finish `testing/`: test plan with full requirement coverage, `bringup.md` with this
+   board's values, first-article checklist (`references/test-plan.md`).
+5. With the user's approval: commit, tag `rev-<X>`, push. The user approves before any
+   order and fills in `ORDER.md` against the fab's order page.
+After boards exist, problems go into `docs/errata.md`; a new revision starts by reading it.
 
 ## Agent failure modes to guard against
 
@@ -259,6 +308,15 @@ model), interactive HTML BOM, bring-up procedure. Check the gerbers in a viewer.
 | Moving a part the user needs fixed | Fixed / Region / Free table from G4 before any placement run |
 | Building a new router or placer instead of using the installed one | Tooling facts; "Measured baselines" |
 | Component without a 3D model, or a downloaded model used unchecked | "3D models" section: library → manufacturer → online → recreate from the datasheet drawing; verify dimensions and origin |
+| Bare silkscreen: no revision, date, owner or link to documentation | `references/silkscreen.md`, `scripts/silk_lint.py`, render review at G7 |
+| Connector pinout mirrored between two boards or a cable | Mating check with a justified pin map at G2 and G7 |
+| Wrong part rotation or origin at the assembler | Placement-file check against the assembler's preview |
+| Wrong fab options ordered (thickness, finish, stiffener, impedance) | `ORDER.md` filled in against the order page |
+| Regenerating or editing released manufacturing data | `scripts/release.py` refuses; new revision instead |
+| BOM line with no MPN or a single source | `scripts/bom_sources.py`, part risk check |
+| Requirement that is never tested | Traceability table in `testing/test-plan.md` |
+| Report as a wall of text | Figures first; `scripts/report_assets.py`; design-report §0 |
+| Advanced study skipped because nobody asked | Optional studies offered at G0 and G8 |
 | Running a tool on the user's board in place | Work on a copy with its `.kicad_pro` and `.kicad_sch`; KiCad closed |
 | Regulatory claims from memory | Re-verify dates on EUR-Lex |
 
@@ -323,7 +381,13 @@ document and the sub-skills; do not reconstruct its contents from memory.
 | `references/dfm-fab.md` | Fab rules, stackups, DRC presets, assembly, parts |
 | `references/dft-bringup.md` | Testpoints, LEDs, boot/reset, debug, bring-up plan |
 | `references/simulation-playbook.md` | SPICE in KiCad/ngspice, failure cases, Monte Carlo |
-| `references/design-report.md` | Which calculations and simulations are required, with which tool, and the report layout |
+| `references/design-report.md` | Which calculations and simulations are required, with which tool, and the report layout; reports are visual |
+| `references/project-structure.md` | Starting or adopting a project, folders, repository, releasing a revision |
+| `references/silkscreen.md` | Silkscreen design: identity block, QR code, logo, labels, legibility |
+| `references/verification.md` | Datasheet, footprint, mating, placement-file, manufacturing-data and part-risk checks |
+| `references/test-plan.md` | Test plan traced to requirements, records per serial, first article, errata |
+| `references/flex-fpc.md` | Any flexible or rigid-flex circuit, ZIF/FFC fingers, stiffeners |
+| `references/optional-studies.md` | The menu of advanced studies to offer at G0 and G8 |
 | `references/validation-tools.md` | IBIS/SI, PDN, thermal, STA before ordering |
 | `references/tooling-survey.md` | Which tool/plugin/MCP server for a job |
 | `references/install-quickstart.md` | Setting up the machine |
@@ -336,6 +400,20 @@ Scripts:
 - `scripts/drc_summary.py` — summarises a `kicad-cli pcb drc --format json` report and
   counts unrouted nets, for the routing loop metrics.
 - `scripts/thermal_check.py` — junction temperature and cooling decision per part.
+- `scripts/new_project.py` — creates the standard project folder with starter documents.
+- `scripts/release.py` — freezes one revision's manufacturing outputs; refuses on DRC
+  errors or an existing revision folder.
+- `scripts/silk_art.py` — QR-code and logo footprints for the silkscreen.
+- `scripts/silk_lint.py` — silkscreen lint: revision, date, owner, QR, logo, text size,
+  text over pads.
+- `scripts/mating_check.py` — pin-by-pin net comparison of two mating connectors.
+- `scripts/bom_sources.py` — BOM with links at several distributors; flags lines
+  without an MPN.
+- `scripts/report_assets.py` — board renders, layer images and schematic sheets for
+  the reports.
+
+Run scripts with the tools environment first on `PATH`
+(`PCB_TOOLS_BIN` in `~/.config/pcb-design/krt.env`); `silk_art.py` needs it.
 
 Setup check: `install.sh --check` in this skill's repository reports whether
 KiCadRoutingTools, its Python environment, `kicad-cli` and each skill are in place.

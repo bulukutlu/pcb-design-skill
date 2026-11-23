@@ -12,3 +12,5 @@ matplotlib        # plots for the report
 PySpice           # drive ngspice from Python (needs the ngspice program itself)
 pyibis-ami        # IBIS-AMI SerDes models, headless
 kicad-python      # IPC API to a running KiCad (import kipy)
+qrcode            # QR code footprint for the silkscreen (scripts/silk_art.py)
+Pillow            # logo footprint for the silkscreen

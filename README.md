@@ -3,7 +3,10 @@
 Claude Code skills for designing a PCB in KiCad 10 the way a careful hardware
 engineer would: requirements first, readable schematics, simulation of failure
 cases, fab-driven design rules, constrained placement, routing that keeps the
-board's rules, 3D models for every part, and a DRC-graded release.
+board's rules, 3D models for every part, a designed silkscreen with a QR code to the
+documentation, independent verification passes, a test plan traced to the
+requirements, and a frozen, DRC-graded release per revision. Reports are built
+around figures, not prose.
 
 Placement and routing are done by
 [KiCadRoutingTools](https://github.com/drandyhaas/KiCadRoutingTools). This
@@ -31,6 +34,39 @@ version. Each launcher adds four rules: work on a copy of the board, keep the
 board's design rules (`--escalation board --no-fix-drc-settings`), ask before
 putting vias in pads, and grade every result with KiCad's own DRC against the
 original project file.
+
+## What a project looks like
+
+Every board gets the same folder, under version control:
+
+```
+<Project>/
+  README.md  STATUS.md
+  kicad/            KiCad project, project libraries, 3D models
+  sim/              simulation decks, models, plots
+  docs/             design notes, design report, BOM with distributor links, errata, figures
+  manufacturing/    rev-A/, rev-B/ ... frozen outputs with checksums and an order record
+  assembly/         assembly drawings, DNP list, programming files
+  testing/          test plan, bring-up procedure, first-article checklist, results per serial
+  mechanical/       STEP, enclosure, fit checks
+```
+
+Helper scripts in `skills/pcb-design/scripts/`:
+
+| Script | What it does |
+|---|---|
+| `new_project.py` | Creates that folder with starter documents; never overwrites |
+| `release.py` | Freezes one revision's manufacturing data; refuses on DRC errors or an existing revision |
+| `silk_art.py` | QR-code and logo footprints for the silkscreen |
+| `silk_lint.py` | Checks the silkscreen for revision, date, owner, QR code, logo, text size, text over pads |
+| `mating_check.py` | Compares two mating connectors pin by pin |
+| `bom_sources.py` | BOM with links at Mouser, DigiKey, Farnell, LCSC and Octopart |
+| `report_assets.py` | Board renders, layer images and schematic sheets for the reports |
+| `sch_lint.py`, `drc_summary.py`, `thermal_check.py` | Schematic readability, DRC summary, junction temperatures |
+
+The skill also offers a menu of optional studies at the start (3D thermal simulation,
+alternate-part search, cost breakdown, material budget, magnetic-field and radiation
+compatibility, vacuum, cryogenic, FMEA and others) and runs only the ones you pick.
 
 ## Install
 
@@ -129,6 +165,7 @@ reported as not run, so install what your board needs:
 | PySpice | Driving ngspice from Python | `./install.sh` |
 | pyibis-ami | SerDes IBIS-AMI models | `./install.sh` |
 | kicad-python | KiCad IPC API | `./install.sh` |
+| qrcode, Pillow | QR-code and logo footprints for the silkscreen | `./install.sh` |
 | ngspice | SPICE: nominal, failure cases, Monte Carlo, PDN sweeps | `./install.sh --system-tools`, or `brew install ngspice` / `sudo apt install ngspice` |
 | Gmsh | Meshing for thermal FEM | `./install.sh --system-tools`, or `brew install gmsh` / `sudo apt install gmsh` |
 | gerbv | Checking gerbers before ordering | `./install.sh --system-tools`, or `brew install gerbv` / `sudo apt install gerbv` |
@@ -193,6 +230,13 @@ nets instead.
   from a run, and the `apt` / `dnf` commands it prints were not executed.
 - The sub-skills were checked to load and to start KiCadRoutingTools' tools. None
   has been run through a complete placement or routing job under these launchers.
+- The helper scripts were each run on test boards. The generated QR footprint loads
+  and renders in KiCad but has not been printed or scanned; scanning it is on the
+  first-article checklist.
+- `silk_lint.py` estimates text-over-pad overlap from text size; treat its hits as
+  places to look.
+- The gated workflow as a whole has not been run end to end on a new board since
+  these additions.
 - The launchers were written against KiCadRoutingTools 0.23.7.
 
 ## Credits

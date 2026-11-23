@@ -7,6 +7,26 @@ limit, a margin and a pass/fail. A row that does not apply is listed as "not
 applicable" with the reason. A check that could not be run because its tool is
 missing is listed as **not run**, never as passed.
 
+## 0. Reports are visual
+The user reads figures, not walls of text. This applies to the design report, the
+README, test records and any summary written for a person.
+- Write Markdown (renders on the repository host) or a standalone HTML file. Images are
+  files under `docs/img/`, linked with relative paths.
+- Every section opens with a figure or a table: a board render, a schematic sheet, a
+  layer image, a plot, a block diagram, a photo. Prose is for what the figure cannot say:
+  the decision, the reason, the limit.
+- `python scripts/report_assets.py <Project>` generates the standard set: top and bottom
+  renders, one image per copper and silkscreen layer, one per schematic sheet.
+- Every simulation and calculation that produces a curve is shown as a plot with its
+  limit drawn on it (matplotlib PNG). A table of numbers alone is not enough when the
+  shape matters.
+- Block diagram and power tree as diagrams (Mermaid in Markdown, or an SVG), not as
+  indented lists.
+- Annotate: mark the hot loop, the HV area, the critical nets on a layer image instead
+  of describing where they are.
+- Results as tables with a pass/fail column; colour or symbols are fine in HTML.
+- If a paragraph runs past about six lines, it should probably be a table or a figure.
+
 ## 1. Structure
 1. Summary: what the board is, revision, verdict, open items.
 2. Requirements table (G0) and how each is met.

@@ -33,7 +33,8 @@ DEFAULT_TOOLS_VENV = os.path.join(HOME, '.local', 'share', 'pcb-design', 'venv')
 # import name -> what the design report needs it for
 PY_TOOLS = [('numpy', 'PDN, timing and tolerance scripts'), ('scipy', 'PDN and filter calculations'),
             ('matplotlib', 'plots for the report'), ('PySpice', 'ngspice from Python'),
-            ('pyibisami', 'IBIS-AMI SerDes models'), ('kipy', 'KiCad IPC API')]
+            ('pyibisami', 'IBIS-AMI SerDes models'), ('kipy', 'KiCad IPC API'),
+            ('qrcode', 'QR code for the silkscreen'), ('PIL', 'logo for the silkscreen')]
 # program -> (what it is for, Homebrew formula, apt package)
 SYS_TOOLS = [('ngspice', 'SPICE simulations (G3) and PDN sweeps', 'ngspice', 'ngspice'),
              ('gmsh', 'meshing for thermal FEM (G8)', 'gmsh', 'gmsh'),
@@ -242,6 +243,10 @@ def write_env(krt, venv, tools_venv):
         if os.path.isfile(os.path.join(krt, 'VERSION')):
             ver = open(os.path.join(krt, 'VERSION')).read().strip()
         lines += ['KRT_ROOT=%s' % krt, 'KRT_BIN=%s' % venv_bin(venv), 'KRT_VENV=%s' % venv, 'KRT_VERSION=%s' % ver]
+    cli = find_tool('kicad-cli', ('/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli',
+                                  r'C:\Program Files\KiCad\10.0\bin\kicad-cli.exe'))
+    if cli:
+        lines += ['KICAD_CLI=%s' % cli]
     tools_venv = tools_venv or old.get('PCB_TOOLS_VENV')
     if tools_venv and os.path.isdir(tools_venv):
         lines += ['PCB_TOOLS_BIN=%s' % venv_bin(tools_venv), 'PCB_TOOLS_VENV=%s' % tools_venv]
