@@ -49,18 +49,30 @@ Do this numerically, not by feel:
    edges).
 4. HV nets (HV net class, custom clearance rule).
 5. Sensitive analog (guarding, away from digital and switch nodes).
-6. Everything else → autorouter.
+6. Everything else → the router (`/plan-pcb-routing`).
 
-## 4. Autorouting (Autorouter plugin, hulryung/kicad-autorouter)
-- Install from KiCad's Plugin and Content Manager; it supports KiCad 9/10, reads net
-  classes and `.kicad_dru` custom rules (including HV isolation from v0.5.7), and has a
-  wall-clock limit (v0.5.8). It is a testing-grade release — review its output.
-- **Lock** all manually routed tracks before running it, so it cannot rip them up.
-- Give it only the non-critical remainder and a timeout.
-- It uses the SWIG action-plugin API, so it runs inside the KiCad GUI. An agent with only
-  shell access must ask the user to run it, or use the IPC/MCP route, or Freerouting
-  2.5's IPC mode as fallback.
-- After it runs, always: `kicad-cli pcb drc` and the metrics below.
+## 4. Autorouting (KiCadRoutingTools, drandyhaas/KiCadRoutingTools)
+- Install it from KiCad's Plugin and Content Manager ("KiCad Routing Tools"), then run
+  this repository's `install.sh` once. It has a command line, so an agent with shell
+  access can run it headless; nothing needs the KiCad GUI.
+- Drive it through the sub-skills, not bare commands: `/plan-pcb-placement` for
+  placement, `/plan-pcb-routing` for the ordered plan (pours → fan-out → differential
+  pairs → impedance nets → remaining nets → return vias), `/diagnose-routing-failures`
+  when nets stay open, `/review-routed-board` for sign-off.
+- **Rule policy.** Always pass `--escalation board --no-fix-drc-settings`. By default
+  the router makes tracks, vias and clearances smaller than the board's own minimums to
+  reach 100 % and rewrites the output project's DRC settings to match. On a 6-layer,
+  250-net test board the defaults gave 250/250 nets with 270 DRC errors against the
+  original rules; with the two options, 244/250 and 0 errors.
+- **Lock** all manually routed tracks first. It does not rip existing copper unless told
+  to (`--rip-existing-nets`), and never rips KiCad-locked copper.
+- Work on a copy of the board with its `.kicad_pro` and `.kicad_sch`; never `--overwrite`.
+- Vias in pads are allowed unless `--same-net-pad-clearance` is set. Ask the user.
+- After it runs, always: `kicad-cli pcb drc --refill-zones --schematic-parity` against
+  the original `.kicad_pro`, and the metrics below. Its own "N/N routed" summary is not
+  the verdict.
+- Do not replace or wrap it with a custom global planner. One was tested (negotiated
+  crossing-minimising plan fed into its plan hook): 241/250 against 244/250 without.
 
 ## 5. The loop (mandatory)
 ```

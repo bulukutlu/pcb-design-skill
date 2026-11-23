@@ -50,6 +50,7 @@ IPC-2221B, IPC-2152, IPC-7351, IPC-A-610, IPC-2581, IPC-D-356, IPC-9252; IEC 606
 - KiCad 10: https://www.kicad.org/blog/2026/03/Version-10.0.0-Released/ ; docs https://docs.kicad.org/10.0/
 - SWIG deprecation: https://dev-docs.kicad.org/en/apis-and-binding/pcbnew/index.html
 - kicad-python: https://pypi.org/project/kicad-python/
+- KiCadRoutingTools: https://github.com/drandyhaas/KiCadRoutingTools
 - Autorouter plugin: https://github.com/hulryung/kicad-autorouter
 - Freerouting 2.5.0: https://github.com/freerouting/freerouting/releases/tag/v2.5.0
 - KiBot: https://kibot.readthedocs.io ; kicad_auto: https://github.com/INTI-CMNB/kicad_auto

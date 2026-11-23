@@ -3,12 +3,26 @@
 Check versions after install: `kicad-cli version`, `ngspice --version`, `kibot --version`,
 `kikit --version`, `python -c "import kipy; print(kipy.__version__)"`.
 
-## Key pitfall: two Pythons
-- KiCad's bundled Python runs SWIG action plugins (e.g. the Autorouter plugin). Do not
-  pip-install into it by hand; PCM handles plugin dependencies (IPC plugins get their
-  own venv automatically).
+## Fast path
+From a clone of this repository:
+```bash
+./install.sh            # installs the skills, finds KiCadRoutingTools, builds its Python environment
+./install.sh --check    # reports what is present and what is missing, changes nothing
+```
+`install.sh` needs only `python3` (3.9 or newer) and network access to PyPI. It does
+not install KiCad or the KiCadRoutingTools plugin; it tells you if they are missing.
+What it sets up, and how to do each step by hand, is in the repository `README.md`.
+
+## Key pitfall: three Pythons
+- KiCad's bundled Python runs SWIG action plugins. Do not pip-install into it by hand;
+  PCM handles plugin dependencies (IPC plugins get their own venv automatically). On
+  macOS it ships **without numpy**, so KiCadRoutingTools' command-line tools do not run
+  under it.
+- The router's Python: a venv holding numpy, scipy, shapely and Pillow
+  (`requirements.txt`), created by `install.sh` at
+  `~/.local/share/kicad-routing-tools/venv`. The sub-skills put it first on `PATH`.
 - Your own Python (venv/pipx) runs kicad-python (IPC), KiBot, KiKit, PyIBIS-AMI,
-  gerber2ems, scripts.
+  gerber2ems, scripts (`requirements-tools.txt`).
 - The IPC API needs KiCad running with Preferences → Plugins → "Enable KiCad API" on.
 
 ## Linux (Ubuntu / Debian)
@@ -57,13 +71,17 @@ pip install kicad-python numpy matplotlib PySpice pyibis-ami
 - Elmer installer (set `ELMER_HOME`); openEMS prebuilt zip (set `OPENEMS_INSTALL_PATH`).
 
 ## KiCad plugins (Plugin and Content Manager, inside KiCad)
-- **Autorouter** (hulryung/kicad-autorouter) — project router.
+- **KiCad Routing Tools** (drandyhaas/KiCadRoutingTools) — project router and placer.
+  Install it here, then run `install.sh`. Without PCM: `git clone` the repository,
+  run `python3 build_router.py` in it (downloads the prebuilt router for your OS), and
+  pass its path with `./install.sh --krt /path/to/KiCadRoutingTools`.
 - Freerouting (fallback), Interactive HTML BOM, KiKit (GUI part), Fabrication Toolkit or
   kicad-jlcpcb-tools, teardrops are native in KiCad 10.
 
 ## Claude Code integration
-- Install this skill folder at `~/.claude/skills/pcb-design/` (user-wide) or
-  `<project>/.claude/skills/pcb-design/` (per project).
+- `./install.sh` copies every folder under `skills/` into `~/.claude/skills/`
+  (user-wide). For one project only, copy them into `<project>/.claude/skills/` and run
+  `./install.sh --env-only`.
 - Add a KiCad MCP server, e.g.:
   `pipx install kicad-mcp-pro && kicad-mcp-pro setup --agent claude-code`
   or follow Konnect-EDA's README; generic form: `claude mcp add <name> -- <launch cmd>`.

@@ -1,0 +1,9 @@
+# Optional Python tools the pcb-design workflow uses outside routing.
+# Install into a venv of your own, e.g.
+#   python3 -m venv ~/venvs/pcb && ~/venvs/pcb/bin/pip install -r requirements-tools.txt
+kicad-python      # IPC API to a running KiCad (import kipy)
+numpy
+matplotlib
+PySpice           # ngspice from Python (G3 simulation)
+pyibis-ami        # IBIS-AMI models (G8 signal integrity)
+cadquery          # recreating a 3D STEP model from a datasheet drawing

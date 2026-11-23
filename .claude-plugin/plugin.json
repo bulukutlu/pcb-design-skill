@@ -1,0 +1,5 @@
+{
+  "name": "pcb-design",
+  "version": "2.0.0",
+  "description": "End-to-end KiCad 10 PCB design workflow: readable schematics, SPICE incl. failure cases, fab-driven DRC, constrained placement and routing with KiCadRoutingTools, 3D models, DFM/DFT, SI/PDN/thermal checks, EMC and EU CE."
+}

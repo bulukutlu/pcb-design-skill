@@ -20,7 +20,8 @@
 ## 3. Routing
 | Option | Notes |
 |---|---|
-| **Autorouter plugin** (hulryung/kicad-autorouter), project choice | PCM plugin, MIT, v0.5.8 (18 Nov 2026), testing release. Grid router + Freerouting engine; reads `.kicad_dru` incl. HV isolation; wall-clock cap; optional AI assistant. SWIG action plugin → GUI only; will need an IPC port for KiCad 11. On macOS disable App Nap (3–5× slowdown otherwise). |
+| **KiCadRoutingTools** (drandyhaas/KiCadRoutingTools), project choice | PCM plugin, MIT, v0.23.7 (Nov 2026). Rust grid router with a Python CLI: constrained placement (annealing, locks, edge seating, zones), QFN/BGA fan-out, differential pairs, impedance-derived widths, power-net widths, planes, length matching, rip-up, failure diagnosis, and its own Claude Code skills. Headless. Needs numpy, scipy, shapely, Pillow in a Python of its own (`install.sh`). Must be run with `--escalation board --no-fix-drc-settings` or it shrinks features below the board's rules. |
+| Autorouter plugin (hulryung/kicad-autorouter), earlier choice | PCM plugin, MIT, v0.5.8 (18 Nov 2026), testing release. Grid router + Freerouting engine; reads `.kicad_dru` incl. HV isolation; wall-clock cap; optional AI assistant. SWIG action plugin → GUI only; will need an IPC port for KiCad 11. On macOS disable App Nap (3–5× slowdown otherwise). |
 | Freerouting 2.5.0 (fallback) | IPC mode for KiCad 10 (separate process, no UI freeze), DSN/SES fallback; needs Java 25 currently; own MCP server |
 | Quilter, DeepPCB, Cherry Blossom, ProtoFlow | Commercial cloud; vendor benchmarks only |
 
@@ -61,7 +62,7 @@ Known failure modes: SWIG dependence, file edits leaving KiCad state stale,
 netlist-only schematics, poor agent routing quality (KiCad forum).
 
 ## 7. Recommended minimal stack for this pipeline
-KiCad 10.0.x + kicad-cli, ngspice, Autorouter plugin (+ Freerouting fallback), KiBot,
+KiCad 10.0.x + kicad-cli, ngspice, KiCadRoutingTools (+ Freerouting fallback), KiBot,
 KiKit, Interactive HTML BOM, kicad-python, one KiCad MCP server (Konnect-EDA or
 kicad-mcp-pro), Python venv with numpy/matplotlib/PySpice, gerbv. Add openEMS,
 gerber2ems, Elmer+Gmsh, PyIBIS-AMI when the board needs those checks.

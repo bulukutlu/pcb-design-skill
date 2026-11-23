@@ -1,0 +1,12 @@
+# Python packages KiCadRoutingTools' command-line tools need.
+# install.sh puts them in a virtual environment of their own
+# (~/.local/share/kicad-routing-tools/venv); nothing is installed into KiCad's
+# bundled Python or your system Python.
+#
+# By hand:
+#   python3 -m venv ~/.local/share/kicad-routing-tools/venv
+#   ~/.local/share/kicad-routing-tools/venv/bin/pip install -r requirements.txt
+numpy>=1.22
+scipy>=1.7
+shapely>=2.0      # placement geometry
+Pillow>=10.1      # board renders and placement previews (optional for routing)
