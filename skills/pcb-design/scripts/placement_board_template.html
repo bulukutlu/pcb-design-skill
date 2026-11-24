@@ -1,0 +1,1204 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root {
+  --bg: #eceff0;
+  --surface: #ffffff;
+  --surface-2: #f4f6f5;
+  --text: #18211c;
+  --muted: #56645b;
+  --border: #c9d3cc;
+  --accent: #a4561f;
+  --accent-text: #ffffff;
+  --accent-soft: #f6e6d8;
+  --focus: #1f6feb;
+  --ok: #1d7a44;
+  --ok-soft: #dff1e6;
+  --warn: #9a5b00;
+  --warn-soft: #fbefd9;
+  --danger: #b42318;
+  --board-bg: #dfe5e1;
+  --mask: #2f5d40;
+  --mask-edge: #c8d2c0;
+  --copper: #d79a4e;
+  --copper-dim: #b9854a;
+  --label: #f4f7f2;
+  --label-halo: #1d3a28;
+  --fixed: #d6dde3;
+  --region: #78d6e8;
+  --free: #f2c35e;
+  --sel: #ff5fa2;
+  --keepout: #ff8a65;
+  --drawing: #b7c8bc;
+  --rats: #f1f5f9;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101512;
+    --surface: #18201b;
+    --surface-2: #1e2822;
+    --text: #e4ebe6;
+    --muted: #9aa9a0;
+    --border: #2f3c34;
+    --accent: #e09455;
+    --accent-text: #1a0f06;
+    --accent-soft: #3a2616;
+    --focus: #6aa7ff;
+    --ok: #6fd39a;
+    --ok-soft: #173525;
+    --warn: #f0b45a;
+    --warn-soft: #3a2a12;
+    --danger: #ff8070;
+    --board-bg: #0b0f0d;
+    --mask: #173524;
+    --mask-edge: #5d7a66;
+    --copper: #d99a52;
+    --copper-dim: #9c7040;
+    --label: #eef3ee;
+    --label-halo: #0b1a11;
+    --fixed: #b8c3cc;
+    --region: #5cc8dd;
+    --free: #f0bd4f;
+    --sel: #ff70ad;
+    --keepout: #ff8a65;
+    --drawing: #6f8a78;
+    --rats: #dfe7ee;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101512;
+  --surface: #18201b;
+  --surface-2: #1e2822;
+  --text: #e4ebe6;
+  --muted: #9aa9a0;
+  --border: #2f3c34;
+  --accent: #e09455;
+  --accent-text: #1a0f06;
+  --accent-soft: #3a2616;
+  --focus: #6aa7ff;
+  --ok: #6fd39a;
+  --ok-soft: #173525;
+  --warn: #f0b45a;
+  --warn-soft: #3a2a12;
+  --danger: #ff8070;
+  --board-bg: #0b0f0d;
+  --mask: #173524;
+  --mask-edge: #5d7a66;
+  --copper: #d99a52;
+  --copper-dim: #9c7040;
+  --label: #eef3ee;
+  --label-halo: #0b1a11;
+  --fixed: #b8c3cc;
+  --region: #5cc8dd;
+  --free: #f0bd4f;
+  --sel: #ff70ad;
+  --keepout: #ff8a65;
+  --drawing: #6f8a78;
+  --rats: #dfe7ee;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+}
+.app {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+h1 { font-size: 17px; margin: 0; font-weight: 650; letter-spacing: .01em; }
+h2 { font-size: 12px; margin: 0 0 6px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 650; }
+.mono, input[type=number] { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+.titlebar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.meta { color: var(--muted); font-size: 12.5px; }
+.banner { border: 1px solid var(--border); background: var(--warn-soft); color: var(--text); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+.banner strong { color: var(--warn); }
+.status { min-height: 1.3em; font-size: 12.5px; color: var(--muted); }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 12px; align-items: start; }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.stage { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.group { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; border-radius: 0; border-right: 1px solid var(--border); }
+.seg button:last-child { border-right: 0; }
+button, select, input, textarea {
+  font: inherit; color: var(--text);
+}
+button {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 7px;
+  padding: 5px 10px; min-height: 32px; cursor: pointer; transition: background-color .12s, border-color .12s;
+}
+button:hover:not(:disabled) { background: var(--surface-2); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 600; }
+.seg button[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--accent); }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+button.primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.06); }
+button.small { min-height: 26px; padding: 2px 8px; font-size: 12.5px; }
+select, input[type=number], input[type=search], textarea {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 7px; padding: 5px 8px; min-height: 32px;
+}
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+label.chk { display: inline-flex; gap: 5px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; }
+.boardwrap {
+  position: relative; height: clamp(300px, min(66vh, 80vw), 920px); border: 1px solid var(--border); border-radius: 10px;
+  background: var(--board-bg); overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+#board { display: block; width: 100%; height: 100%; cursor: grab; }
+#board.panning { cursor: grabbing; }
+#board:focus-visible { outline: 2px solid var(--focus); outline-offset: -3px; }
+.empty {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px;
+  color: var(--muted); text-align: center; padding: 24px; pointer-events: none;
+}
+.empty .big { font-size: 15px; color: var(--text); font-weight: 600; }
+.legend {
+  position: absolute; left: 8px; bottom: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px 12px;
+  font-size: 11.5px; color: var(--text); pointer-events: none;
+}
+.legend span { background: color-mix(in srgb, var(--surface) 86%, transparent); border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; display: inline-flex; align-items: center; gap: 5px; }
+.sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; border: 2px solid; }
+.sw.fixed { border-color: var(--fixed); background: repeating-linear-gradient(45deg, var(--fixed) 0 1px, transparent 1px 4px); }
+.sw.region { border-color: var(--region); border-style: dashed; }
+.sw.free { border-color: var(--free); }
+.sw.ko { border-color: var(--keepout); background: repeating-linear-gradient(-45deg, var(--keepout) 0 1px, transparent 1px 4px); }
+.hint { margin: 0; color: var(--muted); font-size: 12.5px; }
+kbd { font: 11.5px ui-monospace, Menlo, monospace; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--surface); }
+.panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.selhead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.selref { font-size: 18px; font-weight: 700; }
+.selval { color: var(--muted); overflow-wrap: anywhere; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 8px; }
+.chip { font-size: 11.5px; border-radius: 999px; padding: 1px 8px; border: 1px solid var(--border); background: var(--surface-2); }
+.chip.fixed { border-color: var(--fixed); }
+.chip.region { border-color: var(--region); border-style: dashed; }
+.chip.free { border-color: var(--free); }
+.chip.warn { border-color: var(--warn); color: var(--warn); }
+.fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.fields label { display: flex; flex-direction: column; font-size: 11.5px; color: var(--muted); gap: 2px; }
+.fields input { width: 100%; min-width: 0; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+textarea { width: 100%; resize: vertical; min-height: 54px; }
+.muted { color: var(--muted); }
+.list { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow: auto; }
+.list li { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--border); padding: 3px 0; }
+.list li:first-child { border-top: 0; }
+.list .pick { flex: 1; text-align: left; border: 0; background: transparent; min-height: 30px; padding: 3px 4px; display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.list .pick:hover { background: var(--surface-2); }
+.list .pick[aria-current="true"] { background: var(--accent-soft); }
+.list .r { font-weight: 650; min-width: 3.5em; }
+.list .d { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; align-self: center; }
+.dot.fixed { background: var(--fixed); } .dot.region { background: var(--region); } .dot.free { background: var(--free); }
+.review { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; align-items: end; }
+@media (max-width: 700px) { .review { grid-template-columns: minmax(0, 1fr); } }
+.rstate { font-weight: 650; }
+.rstate.approved { color: var(--ok); }
+.rstate.changes_requested { color: var(--warn); }
+details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+details ul { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; }
+/* SVG */
+.outline { fill: var(--mask); stroke: var(--mask-edge); stroke-width: 1.5px; vector-effect: non-scaling-stroke; fill-rule: evenodd; }
+.outline-open { fill: none; stroke: var(--mask-edge); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+.area { stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.area.keepout, .area.rule_area { stroke: var(--keepout); fill: url(#hatch-ko); }
+.area.rule_area { stroke-dasharray: 4 3; }
+.area.region { stroke: var(--region); fill: url(#hatch-region); fill-opacity: .4; stroke-dasharray: 6 3; }
+.area.region.active { stroke-width: 2.5px; fill-opacity: 1; }
+.area.user_drawing { stroke: var(--drawing); fill: none; stroke-dasharray: 3 3; opacity: .75; }
+.alabel { fill: var(--label); paint-order: stroke; stroke: var(--label-halo); stroke-linejoin: round; font-family: system-ui, sans-serif; font-weight: 600; }
+.alabel.keepout, .alabel.rule_area { fill: var(--keepout); }
+.alabel.region { fill: var(--region); }
+.hide-drawings .user_drawing { display: none; }
+.view-F [data-aside="B"], .view-B [data-aside="F"] { display: none; }
+.part .crt { stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.part.fixed .crt { stroke: var(--fixed); fill: url(#hatch-fixed); stroke-width: 1.6px; }
+.part.region .crt { stroke: var(--region); fill: color-mix(in srgb, var(--region) 10%, transparent); stroke-dasharray: 4 2.5; }
+.part.free .crt { stroke: var(--free); fill: color-mix(in srgb, var(--free) 10%, transparent); }
+.part .hit { fill: transparent; pointer-events: all; }
+.part .pad { fill: var(--copper); }
+.part.side-B .pad { fill: var(--copper-dim); }
+.part.region, .part.free { cursor: move; }
+.part.fixed { cursor: not-allowed; }
+.part.sel .crt { stroke: var(--sel); stroke-width: 2.6px; stroke-dasharray: none; }
+.part.bad .crt { stroke: var(--danger); }
+.part.inactive { opacity: .16; pointer-events: none; }
+.part.side-B.dim { opacity: .55; }
+.part.side-B.dim .crt { stroke-dasharray: 2 2; }
+.lbl text { fill: var(--label); paint-order: stroke; stroke: var(--label-halo); stroke-linejoin: round; font-family: system-ui, sans-serif; font-weight: 650; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.lbl use { color: var(--fixed); pointer-events: none; }
+.hide-labels .lbl { display: none; }
+.lbl.tiny { display: none; }
+.part.sel .lbl.tiny { display: inline; }
+.rats, #g-alabels { pointer-events: none; }
+.rats path { fill: none; stroke: var(--rats); stroke-width: 1px; vector-effect: non-scaling-stroke; opacity: .75; }
+.rats path.hot { stroke: var(--sel); opacity: 1; stroke-width: 1.4px; }
+.hide-rats .rats { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+</style>
+
+<div class="app">
+  <header>
+    <div class="titlebar">
+      <h1 id="title">__TITLE__</h1>
+      <span id="meta" class="meta">Loading layout&#x2026;</span>
+    </div>
+  </header>
+  <div id="banner" class="banner" role="status" hidden></div>
+  <div class="main">
+    <section class="stage" aria-label="Board">
+      <div class="toolbar" role="toolbar" aria-label="Board view">
+        <div class="seg" role="group" aria-label="Side">
+          <button type="button" id="view-F" data-view="F" aria-pressed="true" title="Top side; B side faint and locked">Top (F)</button>
+          <button type="button" id="view-B" data-view="B" aria-pressed="false" title="Bottom side, seen from the top">Bottom (B)</button>
+          <button type="button" id="view-both" data-view="both" aria-pressed="false" title="Both sides; B side dimmed">Both</button>
+        </div>
+        <div class="group" role="group" aria-label="Zoom">
+          <button type="button" id="zoom-out" aria-label="Zoom out">&#x2212;</button>
+          <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+          <button type="button" id="zoom-fit">Fit</button>
+        </div>
+        <div class="group" role="group" aria-label="Rotate">
+          <button type="button" id="btn-rot90" title="Rotate 90&#xB0; counter-clockwise (R)" aria-label="Rotate 90 degrees counter-clockwise">+90&#xB0;</button>
+          <button type="button" id="btn-rotm90" title="Rotate 90&#xB0; clockwise (Shift+R)" aria-label="Rotate 90 degrees clockwise">&#x2212;90&#xB0;</button>
+          <button type="button" id="btn-rot45" title="Rotate 45&#xB0; counter-clockwise" aria-label="Rotate 45 degrees counter-clockwise">+45&#xB0;</button>
+        </div>
+        <label class="chk">Grid
+          <select id="grid" aria-label="Snap grid in mm">
+            <option value="0.05">0.05 mm</option>
+            <option value="0.1" selected>0.1 mm</option>
+            <option value="0.25">0.25 mm</option>
+            <option value="0.5">0.5 mm</option>
+            <option value="1">1.0 mm</option>
+          </select>
+        </label>
+        <label class="chk"><input type="checkbox" id="t-rats" checked> Ratsnest</label>
+        <label class="chk"><input type="checkbox" id="t-power"> Power nets</label>
+        <label class="chk"><input type="checkbox" id="t-draw" checked> Drawings</label>
+        <label class="chk"><input type="checkbox" id="t-labels" checked> Labels</label>
+      </div>
+      <div class="boardwrap" id="boardwrap">
+        <svg id="board" tabindex="0" role="application" aria-label="Board canvas. Select a part in the list, then use arrow keys to nudge and R to rotate." preserveAspectRatio="xMinYMin meet">
+          <defs>
+            <pattern id="hatch-ko" width="0.8" height="0.8" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+              <rect width="0.8" height="0.8" style="fill: var(--keepout); fill-opacity: .06"></rect>
+              <line x1="0" y1="0" x2="0" y2="0.8" style="stroke: var(--keepout); stroke-width: .12; stroke-opacity: .55"></line>
+            </pattern>
+            <pattern id="hatch-region" width="1" height="1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="1" height="1" style="fill: var(--region); fill-opacity: .05"></rect>
+              <line x1="0" y1="0" x2="0" y2="1" style="stroke: var(--region); stroke-width: .1; stroke-opacity: .45"></line>
+            </pattern>
+            <pattern id="hatch-fixed" width="0.5" height="0.5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="0.5" style="stroke: var(--fixed); stroke-width: .07; stroke-opacity: .5"></line>
+            </pattern>
+            <symbol id="lock" viewBox="0 0 10 12">
+              <path d="M2.2 5V3.6a2.8 2.8 0 0 1 5.6 0V5" fill="none" stroke="currentColor" stroke-width="1.4"></path>
+              <rect x="0.8" y="5" width="8.4" height="6.4" rx="1.2" fill="currentColor"></rect>
+            </symbol>
+          </defs>
+          <g id="vp">
+            <g id="g-outline"></g>
+            <g id="g-areas"></g>
+            <g id="g-parts-B"></g>
+            <g id="g-parts-F"></g>
+            <g id="g-rats" class="rats"></g>
+            <g id="g-alabels"></g>
+          </g>
+        </svg>
+        <div class="empty" id="empty">
+          <div class="big">Loading the board&#x2026;</div>
+          <div>Reading layout.json</div>
+        </div>
+        <div class="legend" id="legend" aria-hidden="true">
+          <span><i class="sw fixed"></i>Fixed (locked)</span>
+          <span><i class="sw region"></i>Region (held to its area)</span>
+          <span><i class="sw free"></i>Free</span>
+          <span><i class="sw ko"></i>Keep-out / rule area</span>
+          <span id="legend-side">B side hidden in this view</span>
+        </div>
+      </div>
+      <p class="hint">Drag Region and Free parts. <kbd>R</kbd> rotates 90&#xB0; (<kbd>Shift</kbd>+<kbd>R</kbd> the other way), arrow keys nudge by the grid, <kbd>+</kbd>/<kbd>&#x2212;</kbd> zoom, <kbd>0</kbd> fits. Wheel or pinch to zoom, drag the background to pan.</p>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <aside class="panel" aria-label="Part details">
+      <section class="card" id="sel-card" aria-labelledby="sel-h">
+        <h2 id="sel-h">Selected part</h2>
+        <div id="sel-empty" class="muted">Nothing selected. Click a part on the board or pick one from the list below.</div>
+        <div id="sel-body" hidden>
+          <div class="selhead"><span class="selref" id="sel-ref"></span><span class="selval" id="sel-value"></span></div>
+          <div class="chips" id="sel-chips"></div>
+          <div class="fields">
+            <label for="inp-x">X (mm)<input type="number" id="inp-x" step="0.1" inputmode="decimal"></label>
+            <label for="inp-y">Y (mm)<input type="number" id="inp-y" step="0.1" inputmode="decimal"></label>
+            <label for="inp-rot">Rot (&#xB0;)<input type="number" id="inp-rot" step="90" inputmode="decimal"></label>
+          </div>
+          <div class="muted mono" id="sel-orig" style="font-size:12px;margin-top:4px"></div>
+          <label for="inp-note" class="muted" style="display:block;margin-top:8px;font-size:12px">Note for this part</label>
+          <textarea id="inp-note" placeholder="e.g. keep this cap within 2 mm of U13 pin 12"></textarea>
+          <div class="row">
+            <button type="button" id="btn-save-note">Save note</button>
+            <button type="button" id="btn-reset-part">Reset part</button>
+          </div>
+        </div>
+      </section>
+      <section class="card" aria-labelledby="moved-h">
+        <h2 id="moved-h">Moved parts <span id="moved-count" class="mono"></span></h2>
+        <div id="moved-empty" class="muted">No parts moved yet.</div>
+        <ul class="list" id="moved-list"></ul>
+      </section>
+      <section class="card" aria-labelledby="parts-h">
+        <h2 id="parts-h">Parts</h2>
+        <input type="search" id="part-filter" placeholder="Filter by ref, value or class" aria-label="Filter parts" style="width:100%;margin-bottom:6px">
+        <ul class="list" id="part-list" aria-label="All parts"></ul>
+      </section>
+      <details class="card" id="notes-card" hidden>
+        <summary>Export notes <span id="notes-count"></span></summary>
+        <ul id="notes-list"></ul>
+      </details>
+    </aside>
+  </div>
+
+  <footer class="card review" aria-labelledby="review-h">
+    <div>
+      <h2 id="review-h">Placement review</h2>
+      <div><span class="muted">Status: </span><span id="review-state" class="rstate">No decision yet</span> <span id="review-when" class="muted"></span></div>
+      <div id="review-prev" class="muted" style="font-size:12.5px"></div>
+      <label for="review-comment" class="muted" style="display:block;margin-top:6px;font-size:12px">Comment (what should change, or anything to keep in mind)</label>
+      <textarea id="review-comment" placeholder="Optional for approval, expected when requesting changes"></textarea>
+    </div>
+    <div class="row" style="margin-top:0">
+      <button type="button" id="btn-request">Request changes</button>
+      <button type="button" id="btn-approve" class="primary">Approve placement</button>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var $ = function (id) { return document.getElementById(id); };
+  var svg = $('board'), vp = $('vp'), wrap = $('boardwrap');
+
+  // ------------------------------------------------------------------ state
+  var L = null;                       // layout.json
+  var parts = [];                     // part objects
+  var byRef = new Map();
+  var nets = new Map();               // net -> {name, power, members: [{part, pad}], path}
+  var regions = new Map();            // region name -> [polygon]
+  var view = { x: 0, y: 0, s: 4 };    // viewBox origin (mm) and scale (px per mm)
+  var opts = { side: 'F', grid: 0.1, rats: true, power: false, drawings: true, labels: true };
+  var selected = null;
+  var db = null, dbMode = 'pending';  // pending | live | none | readonly | ended
+  var stored = new Map();             // ref -> stored move doc body
+  var ops = new Map();                // ref -> {running, next}
+  var review = null, reviewBusy = false, reviewDirty = false, noteDirty = false;
+  var firstSnap = false, snapTimer = null;
+  var autoFit = true;                 // refit on resize until the viewer pans or zooms
+
+  function pref(k, v) {               // per-viewer conveniences only
+    try {
+      if (v === undefined) { var r = localStorage.getItem('pb.' + k); return r === null ? null : JSON.parse(r); }
+      localStorage.setItem('pb.' + k, JSON.stringify(v));
+    } catch (e) { return null; }
+    return null;
+  }
+
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(SVGNS, tag);
+    if (attrs) for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function h(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined && text !== null) e.textContent = String(text);
+    return e;
+  }
+  function fmt(v, d) { var s = (+v).toFixed(d === undefined ? 3 : d); s = s.replace(/\.?0+$/, ''); return s === '-0' ? '0' : s; }
+  function norm180(a) { a = a % 360; if (a <= -180) a += 360; if (a > 180) a -= 360; return Math.abs(a) < 1e-9 ? 0 : a; }
+  function snap(v) { var g = opts.grid; return Math.round(Math.round(v / g) * g * 10000) / 10000; }
+  function status(msg) { $('status').textContent = msg || ''; }
+  function banner(html, text) {
+    var b = $('banner');
+    b.textContent = '';
+    if (!text) { b.hidden = true; return; }
+    var s = h('strong', null, html); b.appendChild(s); b.appendChild(document.createTextNode(' ' + text));
+    b.hidden = false;
+  }
+
+  // board <- local: x = X + lx*c + ly*s ; y = Y - lx*s + ly*c  (KiCad, y down, ccw positive)
+  function toBoard(p, lx, ly, x, y, rot) {
+    var r = (rot === undefined ? p.rot : rot) * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+    return [(x === undefined ? p.x : x) + lx * c + ly * s, (y === undefined ? p.y : y) - lx * s + ly * c];
+  }
+
+  // ------------------------------------------------------------------ geometry
+  function pathD(pts, closed) {
+    if (!pts.length) return '';
+    var d = 'M' + pts[0][0] + ' ' + pts[0][1];
+    for (var i = 1; i < pts.length; i++) d += 'L' + pts[i][0] + ' ' + pts[i][1];
+    return closed ? d + 'Z' : d;
+  }
+  function inPoly(x, y, poly) {
+    var inside = false;
+    for (var i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+  function fitsRegion(p, x, y, rot) {
+    if (p.cls !== 'region') return true;
+    var polys = regions.get(p.region);
+    if (!polys || !polys.length) return true;
+    var b = p.bbox, cs = [[b[0], b[1]], [b[2], b[1]], [b[2], b[3]], [b[0], b[3]]];
+    for (var i = 0; i < 4; i++) {
+      var q = toBoard(p, cs[i][0], cs[i][1], x, y, rot), ok = false;
+      for (var k = 0; k < polys.length && !ok; k++) ok = inPoly(q[0], q[1], polys[k]);
+      if (!ok) return false;
+    }
+    return true;
+  }
+
+  // ------------------------------------------------------------------ ratsnest (Prim MST per net)
+  function padPos(p, pad) { return toBoard(p, pad.x, pad.y); }
+  function netPath(n) {
+    var m = n.members, k = m.length;
+    if (k < 2) return '';
+    var xs = new Float64Array(k), ys = new Float64Array(k), best = new Float64Array(k), link = new Int32Array(k), used = new Uint8Array(k);
+    for (var i = 0; i < k; i++) { var q = padPos(m[i].part, m[i].pad); xs[i] = q[0]; ys[i] = q[1]; best[i] = Infinity; link[i] = -1; }
+    best[0] = 0;
+    var d = '';
+    for (var it = 0; it < k; it++) {
+      var u = -1, bu = Infinity;
+      for (i = 0; i < k; i++) if (!used[i] && best[i] < bu) { u = i; bu = best[i]; }
+      if (u < 0) break;
+      used[u] = 1;
+      if (link[u] >= 0) d += 'M' + xs[link[u]].toFixed(3) + ' ' + ys[link[u]].toFixed(3) + 'L' + xs[u].toFixed(3) + ' ' + ys[u].toFixed(3);
+      for (i = 0; i < k; i++) if (!used[i]) {
+        var dx = xs[i] - xs[u], dy = ys[i] - ys[u], dd = dx * dx + dy * dy;
+        if (dd < best[i]) { best[i] = dd; link[i] = u; }
+      }
+    }
+    return d;
+  }
+  function netVisible(n) { return opts.power || !n.power; }
+  function updateNets(list) {
+    list.forEach(function (n) {
+      if (!netVisible(n)) { if (n.path) n.path.setAttribute('d', ''); return; }
+      if (!n.path) { n.path = el('path', {}, $('g-rats')); }
+      n.path.setAttribute('d', netPath(n));
+    });
+  }
+  function hotNets() {
+    nets.forEach(function (n) { if (n.path) n.path.classList.toggle('hot', !!(selected && selected.nets.has(n))); });
+  }
+  var ratsPending = null;
+  function scheduleNets(p) {
+    if (ratsPending) { ratsPending.add(p); return; }
+    ratsPending = new Set([p]);
+    requestAnimationFrame(function () {
+      var set = new Set();
+      ratsPending.forEach(function (q) { q.nets.forEach(function (n) { set.add(n); }); });
+      ratsPending = null;
+      updateNets(set);
+    });
+  }
+
+  // ------------------------------------------------------------------ view (pan / zoom)
+  function applyView() {
+    var r = wrap.getBoundingClientRect();
+    var w = Math.max(1, r.width), hgt = Math.max(1, r.height);
+    svg.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + (w / view.s) + ' ' + (hgt / view.s));
+    scheduleLabels();
+  }
+  function fit() {
+    if (!L) return;
+    var b = L.bounds, r = wrap.getBoundingClientRect();
+    var bw = Math.max(1, b[2] - b[0]), bh = Math.max(1, b[3] - b[1]), m = 0.04;
+    view.s = Math.min(r.width / (bw * (1 + 2 * m)), r.height / (bh * (1 + 2 * m)));
+    view.x = (b[0] + b[2]) / 2 - r.width / view.s / 2;
+    view.y = (b[1] + b[3]) / 2 - r.height / view.s / 2;
+    applyView();
+  }
+  function toMM(cx, cy) {
+    var r = svg.getBoundingClientRect();
+    return [view.x + (cx - r.left) / view.s, view.y + (cy - r.top) / view.s];
+  }
+  function zoomAt(factor, cx, cy) {
+    var r = svg.getBoundingClientRect();
+    if (cx === undefined) { cx = r.left + r.width / 2; cy = r.top + r.height / 2; }
+    var before = toMM(cx, cy);
+    autoFit = false;
+    view.s = Math.min(400, Math.max(0.3, view.s * factor));
+    view.x = before[0] - (cx - r.left) / view.s;
+    view.y = before[1] - (cy - r.top) / view.s;
+    applyView();
+  }
+  var labelsPending = false;
+  function scheduleLabels() {
+    if (labelsPending) return;
+    labelsPending = true;
+    requestAnimationFrame(function () {
+      labelsPending = false;
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        p.lbl.classList.toggle('tiny', p.fs * view.s < 7);
+      }
+      var fs = 11 / view.s;
+      $('g-alabels').querySelectorAll('text').forEach(function (t) {
+        t.setAttribute('font-size', fs);
+        t.setAttribute('stroke-width', 3 / view.s);
+      });
+    });
+  }
+
+  // ------------------------------------------------------------------ drawing
+  function drawStatic() {
+    var go = $('g-outline'), ga = $('g-areas'), gl = $('g-alabels');
+    var closed = L.outline.filter(function (o) { return o.closed; });
+    if (closed.length) {
+      // evenodd: inner loops become cut-outs
+      el('path', { 'class': 'outline', d: closed.map(function (o) { return pathD(o.pts, true); }).join('') }, go);
+    }
+    L.outline.filter(function (o) { return !o.closed; }).forEach(function (o) {
+      el('path', { 'class': 'outline-open', d: pathD(o.pts, false) }, go);
+    });
+    var labelled = new Set();
+    L.areas.forEach(function (a) {
+      var aside = '';
+      var ly = (a.layers || []).join(' ');
+      if (a.kind === 'keepout' || a.kind === 'rule_area') {
+        var f = /(^|\s)(F\.|\*\.)/.test(ly) || ly === '', b = /(^|\s)(B\.|\*\.)/.test(ly);
+        aside = f && !b ? 'F' : (b && !f ? 'B' : '');
+      }
+      var closedA = a.kind !== 'user_drawing' || a.closed !== false;
+      var pe = el('path', { 'class': 'area ' + a.kind, d: pathD(a.polygon, closedA) }, ga);
+      if (aside) pe.setAttribute('data-aside', aside);
+      if (a.kind === 'region') {
+        if (!regions.has(a.name)) regions.set(a.name, []);
+        regions.get(a.name).push(a.polygon);
+        pe.setAttribute('data-region', a.name);
+      }
+      if (a.kind !== 'user_drawing' && a.polygon.length) {
+        var key = a.kind + '|' + a.name + '|' + aside;
+        var minx = Infinity, miny = Infinity;
+        a.polygon.forEach(function (q) { if (q[0] < minx) minx = q[0]; if (q[1] < miny) miny = q[1]; });
+        if (labelled.has(key) && a.kind !== 'region') return;
+        labelled.add(key);
+        var t = el('text', { 'class': 'alabel ' + a.kind, x: minx + 0.4, y: miny + 0.4, 'dominant-baseline': 'hanging' }, gl);
+        if (aside) t.setAttribute('data-aside', aside);
+        t.textContent = a.name + (a.kind === 'keepout' && ly ? ' (' + ly + ')' : '');
+      }
+    });
+  }
+
+  function buildPart(p) {
+    var g = el('g', { 'class': 'part ' + p.cls + ' side-' + p.side, 'data-ref': p.ref });
+    var b = p.bbox;
+    el('rect', { 'class': 'hit', x: b[0], y: b[1], width: b[2] - b[0], height: b[3] - b[1] }, g);
+    var d = p.courtyard.map(function (c) { return pathD(c.pts, c.closed); }).join('');
+    el('path', { 'class': 'crt', d: d }, g);
+    p.pads.forEach(function (pd) {
+      var shape = pd.shape, rx = 0, m = Math.min(pd.w, pd.h);
+      if (shape === 'circle' || shape === 'oval') rx = m / 2; else if (shape === 'roundrect') rx = m * 0.25;
+      var r = el('rect', { 'class': 'pad', x: pd.x - pd.w / 2, y: pd.y - pd.h / 2, width: pd.w, height: pd.h, rx: rx }, g);
+      if (pd.a) r.setAttribute('transform', 'rotate(' + (-pd.a) + ' ' + pd.x + ' ' + pd.y + ')');
+    });
+    var cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+    p.fs = Math.max(0.35, Math.min(2.4, Math.min(b[2] - b[0], b[3] - b[1]) * 0.42, (b[2] - b[0]) / Math.max(2, p.ref.length) * 1.5));
+    var lg = el('g', { 'class': 'lbl' }, g);
+    var t = el('text', { 'font-size': p.fs, 'stroke-width': p.fs * 0.18 }, lg);
+    t.textContent = p.ref;
+    if (p.cls === 'fixed') {
+      var u = el('use', { href: '#lock', x: -p.fs * 0.35, y: -p.fs * 1.55, width: p.fs * 0.7, height: p.fs * 0.84 }, lg);
+      u.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#lock');
+    }
+    p.lblc = [cx, cy];
+    p.g = g; p.lbl = lg;
+    placePart(p);
+    return g;
+  }
+  function placePart(p) {
+    p.g.setAttribute('transform', 'translate(' + p.x + ' ' + p.y + ') rotate(' + (-p.rot) + ')');
+    p.lbl.setAttribute('transform', 'translate(' + p.lblc[0] + ' ' + p.lblc[1] + ') rotate(' + p.rot + ')');
+  }
+  function sideClasses() {
+    parts.forEach(function (p) {
+      var active = opts.side === 'both' || opts.side === p.side;
+      p.g.classList.toggle('inactive', !active);
+      p.g.classList.toggle('dim', opts.side === 'both' && p.side === 'B');
+    });
+    var F = $('g-parts-F'), B = $('g-parts-B'), r = $('g-rats');
+    if (opts.side === 'B') vp.insertBefore(B, r); else vp.insertBefore(F, r);
+    svg.classList.remove('view-F', 'view-B', 'view-both');
+    svg.classList.add('view-' + opts.side);
+    ['F', 'B', 'both'].forEach(function (s) { $('view-' + s).setAttribute('aria-pressed', String(opts.side === s)); });
+    $('legend-side').textContent = opts.side === 'F' ? 'B side faint, not editable'
+      : opts.side === 'B' ? 'B side seen from the top (x-ray, not mirrored); F side faint'
+      : 'B side dimmed and dashed, seen from the top (not mirrored)';
+  }
+
+  // ------------------------------------------------------------------ selection and panel
+  function select(p, focusList) {
+    if (selected && selected.g) selected.g.classList.remove('sel');
+    selected = p || null;
+    if (selected) {
+      selected.g.classList.add('sel');
+      selected.g.parentNode.appendChild(selected.g);   // on top
+      if (opts.side !== 'both' && opts.side !== selected.side) { opts.side = selected.side; sideClasses(); }
+    }
+    document.querySelectorAll('#g-areas .area.region').forEach(function (a) {
+      a.classList.toggle('active', !!(selected && selected.region && a.getAttribute('data-region') === selected.region));
+    });
+    noteDirty = false;
+    hotNets();
+    renderPanel();
+    renderPartList(false);
+    if (focusList && selected) {
+      var b = document.querySelector('#part-list [data-ref="' + CSS.escape(selected.ref) + '"]');
+      if (b) b.focus();
+    }
+  }
+  function movable(p) { return p && p.cls !== 'fixed' && !readOnlyPart(p); }
+  function readOnlyPart(p) { return opts.side !== 'both' && opts.side !== p.side; }
+  function isMoved(p) { return Math.abs(p.x - p.ox) > 1e-6 || Math.abs(p.y - p.oy) > 1e-6 || Math.abs(norm180(p.rot - p.orot)) > 1e-6; }
+
+  function renderPanel() {
+    var p = selected;
+    $('sel-empty').hidden = !!p;
+    $('sel-body').hidden = !p;
+    if (!p) return;
+    $('sel-ref').textContent = p.ref;
+    $('sel-value').textContent = p.value + (p.footprint ? '  \u00B7  ' + p.footprint.split(':').pop() : '');
+    var chips = $('sel-chips'); chips.textContent = '';
+    chips.appendChild(h('span', 'chip ' + p.cls, p.cls === 'fixed' ? '\uD83D\uDD12 Fixed' : p.cls === 'region' ? 'Region: ' + (p.region || '?') : 'Free'));
+    chips.appendChild(h('span', 'chip', 'Side ' + p.side));
+    chips.appendChild(h('span', 'chip', p.pads.length + ' pad' + (p.pads.length === 1 ? '' : 's')));
+    if (p.locked && p.cls !== 'fixed') chips.appendChild(h('span', 'chip warn', 'Locked in KiCad'));
+    if (p.cls === 'region' && !regions.has(p.region)) chips.appendChild(h('span', 'chip warn', 'Region has no outline'));
+    if (p.cls === 'region' && regions.has(p.region) && !fitsRegion(p, p.x, p.y, p.rot)) chips.appendChild(h('span', 'chip warn', 'Outside its region'));
+    var dis = !movable(p) || dbMode === 'readonly';
+    ['inp-x', 'inp-y', 'inp-rot'].forEach(function (id) { $(id).disabled = dis; $(id).step = id === 'inp-rot' ? 90 : opts.grid; });
+    if (document.activeElement !== $('inp-x')) $('inp-x').value = fmt(p.x, 4);
+    if (document.activeElement !== $('inp-y')) $('inp-y').value = fmt(p.y, 4);
+    if (document.activeElement !== $('inp-rot')) $('inp-rot').value = fmt(p.rot, 2);
+    $('sel-orig').textContent = isMoved(p) ? 'was (' + fmt(p.ox, 4) + ', ' + fmt(p.oy, 4) + ') ' + fmt(p.orot, 2) + '\u00B0' : 'at its exported position';
+    if (!noteDirty) $('inp-note').value = p.note || '';
+    $('inp-note').disabled = dbMode === 'readonly';
+    $('btn-save-note').disabled = dbMode === 'readonly';
+    $('btn-reset-part').disabled = !(isMoved(p) || stored.has(p.ref)) || p.cls === 'fixed' || dbMode === 'readonly';
+    ['btn-rot90', 'btn-rotm90', 'btn-rot45'].forEach(function (id) { $(id).disabled = dis; });
+  }
+  function renderMoved() {
+    var ul = $('moved-list'); ul.textContent = '';
+    var list = parts.filter(function (p) { return isMoved(p) || (stored.has(p.ref) && stored.get(p.ref).note); });
+    list.sort(function (a, b) { return a.ref.localeCompare(b.ref, undefined, { numeric: true }); });
+    $('moved-count').textContent = list.length ? '(' + list.length + ')' : '';
+    $('moved-empty').hidden = list.length > 0;
+    list.forEach(function (p) {
+      var li = h('li');
+      var b = h('button', 'pick'); b.type = 'button'; b.setAttribute('data-ref', p.ref);
+      b.appendChild(h('span', 'dot ' + p.cls));
+      b.appendChild(h('span', 'r', p.ref));
+      var dx = p.x - p.ox, dy = p.y - p.oy, dr = norm180(p.rot - p.orot), desc = [];
+      if (Math.abs(dx) > 1e-6 || Math.abs(dy) > 1e-6) desc.push('\u0394 ' + fmt(dx, 3) + ', ' + fmt(dy, 3) + ' mm');
+      if (Math.abs(dr) > 1e-6) desc.push((dr > 0 ? '+' : '') + fmt(dr, 1) + '\u00B0');
+      var n = stored.has(p.ref) && stored.get(p.ref).note;
+      if (n) desc.push('note');
+      if (!stored.has(p.ref) && db && dbMode === 'live') desc.push('saving\u2026');
+      b.appendChild(h('span', 'd mono', desc.join(' \u00B7 ')));
+      b.addEventListener('click', function () { select(p); });
+      var r = h('button', 'small', 'Reset'); r.type = 'button';
+      r.setAttribute('aria-label', 'Reset ' + p.ref);
+      r.disabled = p.cls === 'fixed' || dbMode === 'readonly';
+      r.addEventListener('click', function () { resetPart(p); });
+      li.appendChild(b); li.appendChild(r); ul.appendChild(li);
+    });
+  }
+  function renderPartList(rebuild) {
+    var ul = $('part-list');
+    if (rebuild !== false || !ul.childNodes.length) {
+      var q = $('part-filter').value.trim().toLowerCase();
+      ul.textContent = '';
+      var frag = document.createDocumentFragment(), shown = 0;
+      parts.forEach(function (p) {
+        if (q && (p.ref + ' ' + p.value + ' ' + p.cls + ' ' + (p.region || '')).toLowerCase().indexOf(q) < 0) return;
+        if (shown++ > 400) return;
+        var li = h('li'), b = h('button', 'pick'); b.type = 'button'; b.setAttribute('data-ref', p.ref);
+        b.appendChild(h('span', 'dot ' + p.cls));
+        b.appendChild(h('span', 'r', p.ref));
+        b.appendChild(h('span', 'd', p.value + ' \u00B7 ' + (p.cls === 'region' ? p.region : p.cls) + ' \u00B7 ' + p.side));
+        b.addEventListener('click', function () { select(p); });
+        li.appendChild(b); frag.appendChild(li);
+      });
+      ul.appendChild(frag);
+    }
+    ul.querySelectorAll('.pick').forEach(function (b) {
+      b.setAttribute('aria-current', String(!!selected && b.getAttribute('data-ref') === selected.ref));
+    });
+  }
+
+  // ------------------------------------------------------------------ moving
+  function setPose(p, x, y, rot) {
+    p.x = Math.round(x * 10000) / 10000; p.y = Math.round(y * 10000) / 10000; p.rot = norm180(rot);
+    placePart(p);
+    p.g.classList.toggle('bad', p.cls === 'region' && regions.has(p.region) && !fitsRegion(p, p.x, p.y, p.rot));
+    scheduleNets(p);
+  }
+  function tryPose(p, x, y, rot, verb) {
+    if (!movable(p)) { status(p.ref + (p.cls === 'fixed' ? ' is fixed and cannot move.' : ' is on the other side; switch the view to edit it.')); return false; }
+    if (!fitsRegion(p, x, y, rot) && fitsRegion(p, p.x, p.y, p.rot)) {
+      status(p.ref + ' can\u2019t ' + verb + ' there: it would leave region \u201C' + p.region + '\u201D.');
+      return false;
+    }
+    setPose(p, x, y, rot);
+    return true;
+  }
+  function rotateSel(delta) {
+    var p = selected;
+    if (!p) { status('Select a part first.'); return; }
+    if (dbMode === 'readonly') return;
+    if (tryPose(p, p.x, p.y, p.rot + delta, 'rotate')) { commit(p); renderPanel(); renderMoved(); }
+  }
+  var nudgeTimer = null;
+  function nudge(dx, dy) {
+    var p = selected;
+    if (!p || dbMode === 'readonly') return;
+    if (tryPose(p, dx ? snap(p.x + dx) : p.x, dy ? snap(p.y + dy) : p.y, p.rot, 'move')) {
+      renderPanel();
+      clearTimeout(nudgeTimer);
+      nudgeTimer = setTimeout(function () { commit(p); renderMoved(); }, 500);
+    }
+  }
+  function resetPart(p) {
+    setPose(p, p.ox, p.oy, p.orot);
+    p.note = '';
+    if (selected === p) noteDirty = false;
+    if (db && dbMode === 'live') queueOp(p.ref, { type: 'delete' });
+    else stored.delete(p.ref);
+    renderPanel(); renderMoved();
+    status(p.ref + ' reset to its exported position.');
+  }
+
+  // ------------------------------------------------------------------ store
+  function docId(ref) {
+    if (/^[A-Za-z0-9_~:@+-]{1,150}$/.test(ref)) return ref;
+    var bytes = new TextEncoder().encode(ref), s = 'x~';
+    for (var i = 0; i < bytes.length; i++) s += bytes[i].toString(16).padStart(2, '0');
+    return s;
+  }
+  function commit(p) {
+    if (!(db && dbMode === 'live')) { renderMoved(); return; }
+    queueOp(p.ref, { type: 'set' });
+  }
+  function bodyFor(p) {
+    return { ref: p.ref, x: p.x, y: p.y, rot: p.rot, side: p.side, note: p.note || '', updatedAt: new Date().toISOString() };
+  }
+  function queueOp(ref, op) {
+    var q = ops.get(ref);
+    if (!q) { q = { running: false, next: null }; ops.set(ref, q); }
+    q.next = op;
+    if (!q.running) runOps(ref, q);
+  }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  async function runOps(ref, q) {
+    q.running = true;
+    while (q.next) {
+      var op = q.next; q.next = null;
+      var p = byRef.get(ref);
+      var doc = db.collection('moves').doc(docId(ref));
+      for (var attempt = 0; attempt < 2; attempt++) {
+        try {
+          if (op.type === 'delete') await doc.delete(); else await doc.set(bodyFor(p));
+          break;
+        } catch (e) {
+          var code = e && e.code;
+          if (code === 'unavailable' && attempt === 0) { await sleep(300 + Math.random() * 700); continue; }
+          storeError(code, 'save ' + ref);
+          break;
+        }
+      }
+    }
+    q.running = false;
+    ops.delete(ref);
+    syncParts();
+  }
+  function storeError(code, what) {
+    if (code === 'invalid_argument' || code === 'transform_error') {
+      dbMode = 'readonly';
+      banner('View only.', 'You can look at this board, but your changes aren\u2019t being saved.');
+      renderPanel(); renderMoved(); renderReview();
+    } else if (code === 'quota_exceeded') {
+      status('Couldn\u2019t ' + what + ': the board\u2019s storage is full. Reset some parts and try again.');
+    } else if (code === 'resource_exhausted') {
+      status('Couldn\u2019t ' + what + ': too many changes at once. Wait a moment and try again.');
+    } else if (code === 'revoked' || code === 'not_granted' || code === 'capability_disabled' || code === 'capability_removed') {
+      dbMode = 'ended';
+      banner('Saving stopped.', 'Moves can\u2019t be saved here any more. Dragging still works for exploring.');
+      renderReview();
+    } else {
+      status('Couldn\u2019t ' + what + '. Try again in a moment.');
+    }
+  }
+  function syncParts() {
+    parts.forEach(function (p) {
+      if (p === drag.part || ops.has(p.ref)) return;
+      var s = stored.get(p.ref), x = p.ox, y = p.oy, rot = p.orot;
+      if (s && isFinite(+s.x) && isFinite(+s.y)) { x = +s.x; y = +s.y; rot = isFinite(+s.rot) ? +s.rot : p.orot; }
+      if (p.cls === 'fixed') { x = p.ox; y = p.oy; rot = p.orot; }
+      if (Math.abs(x - p.x) > 1e-7 || Math.abs(y - p.y) > 1e-7 || Math.abs(norm180(rot - p.rot)) > 1e-7) setPose(p, x, y, rot);
+      p.note = s && typeof s.note === 'string' ? s.note : '';
+    });
+    renderPanel(); renderMoved();
+  }
+  function onMoves(snap) {
+    var m = new Map();
+    snap.docs.forEach(function (d) {
+      if (!d.exists) return;
+      var b = d.data() || {};
+      var ref = typeof b.ref === 'string' ? b.ref : d.id;
+      if (byRef.has(ref)) m.set(ref, b);
+    });
+    stored = m;
+    if (!snap.metadata.fromCache) {
+      firstSnap = true; clearTimeout(snapTimer);
+      if (dbMode === 'live' && $('banner').getAttribute('data-kind') === 'timeout') { banner(); $('banner').removeAttribute('data-kind'); }
+    }
+    syncParts();
+  }
+  function onReview(snap) {
+    review = null;
+    snap.docs.forEach(function (d) { if (d.exists && d.id === 'status') review = d.data(); });
+    renderReview();
+  }
+  function renderReview() {
+    var st = $('review-state'), when = $('review-when');
+    st.className = 'rstate';
+    if (review && review.state) {
+      st.classList.add(review.state);
+      st.textContent = review.state === 'approved' ? 'Approved' : review.state === 'changes_requested' ? 'Changes requested' : String(review.state);
+      when.textContent = review.updatedAt ? '\u00B7 ' + new Date(review.updatedAt).toLocaleString() : '';
+      $('review-prev').textContent = review.comment ? '\u201C' + review.comment + '\u201D' : '';
+    } else {
+      st.textContent = 'No decision yet'; when.textContent = ''; $('review-prev').textContent = '';
+    }
+    var can = db && dbMode === 'live' && !reviewBusy;
+    $('btn-approve').disabled = !can; $('btn-request').disabled = !can;
+    $('review-comment').disabled = !(db && dbMode === 'live');
+    if (!(db && (dbMode === 'live' || dbMode === 'pending'))) {
+      $('review-prev').textContent = dbMode === 'none' ? 'The review can\u2019t be recorded in this view. Answer in chat instead.' : $('review-prev').textContent;
+    }
+  }
+  async function sendReview(state) {
+    if (!(db && dbMode === 'live') || reviewBusy) return;
+    var comment = $('review-comment').value.trim();
+    if (state === 'changes_requested' && !comment && !parts.some(isMoved)) {
+      status('Add a comment or move some parts so the request says what to change.');
+      $('review-comment').focus();
+      return;
+    }
+    reviewBusy = true; renderReview();
+    var doc = db.collection('review').doc('status');
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        await doc.set({ state: state, comment: comment, updatedAt: new Date().toISOString() });
+        $('review-comment').value = ''; reviewDirty = false;
+        status(state === 'approved' ? 'Placement approved.' : 'Change request recorded.');
+        break;
+      } catch (e) {
+        if (e && e.code === 'unavailable' && attempt === 0) { await sleep(300 + Math.random() * 700); continue; }
+        storeError(e && e.code, 'record the review');
+        break;
+      }
+    }
+    reviewBusy = false; renderReview();
+  }
+  async function connect() {
+    var c = window.claude, got = null;
+    try { if (c && typeof c.use === 'function') got = await c.use('db'); } catch (e) { got = null; }
+    if (!got) {
+      dbMode = 'none';
+      banner('Moves can\u2019t be saved here.', 'You can still drag and rotate parts to explore; nothing is stored, and the review buttons are off.');
+      renderReview(); renderMoved(); renderPanel();
+      return;
+    }
+    db = got; dbMode = 'live';
+    renderReview();
+    snapTimer = setTimeout(function () {
+      if (!firstSnap && dbMode === 'live') {
+        banner('Saved moves can\u2019t be reached yet.', 'Showing the exported placement; stored moves will appear when the connection answers.');
+        $('banner').setAttribute('data-kind', 'timeout');
+      }
+    }, 10000);
+    db.collection('moves').onSnapshot(onMoves, function (e) { clearTimeout(snapTimer); storeError(e && e.code, 'load saved moves'); });
+    db.collection('review').onSnapshot(onReview, function (e) { storeError(e && e.code, 'load the review'); });
+  }
+
+  // ------------------------------------------------------------------ pointer input
+  var pointers = new Map();
+  var drag = { part: null, start: null, origin: null, moved: false, lastValid: null };
+  var pan = null, pinch = null;
+  function partFromEvent(e) {
+    var t = e.target;
+    while (t && t !== svg) { if (t.classList && t.classList.contains('part')) return byRef.get(t.getAttribute('data-ref')); t = t.parentNode; }
+    return null;
+  }
+  svg.addEventListener('pointerdown', function (e) {
+    if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
+    svg.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {           // pinch zoom
+      drag.part && cancelDrag();
+      var ps = Array.from(pointers.values());
+      pinch = { d: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y), s: view.s };
+      pan = null;
+      return;
+    }
+    var p = partFromEvent(e);
+    if (p) {
+      if (p !== selected) select(p);
+      if (movable(p) && dbMode !== 'readonly') {
+        drag = { part: p, start: toMM(e.clientX, e.clientY), origin: [p.x, p.y], moved: false,
+                 lastValid: fitsRegion(p, p.x, p.y, p.rot) ? [p.x, p.y] : null, px: e.clientX, py: e.clientY };
+      } else if (p.cls === 'fixed') {
+        status(p.ref + ' is fixed and cannot move.');
+        pan = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
+      }
+    } else {
+      pan = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, click: true };
+      svg.classList.add('panning');
+    }
+  });
+  svg.addEventListener('pointermove', function (e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && pointers.size >= 2) {
+      var ps = Array.from(pointers.values());
+      var d = Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y);
+      var cx = (ps[0].x + ps[1].x) / 2, cy = (ps[0].y + ps[1].y) / 2;
+      zoomAt((pinch.s * d / pinch.d) / view.s, cx, cy);
+      return;
+    }
+    if (drag.part) {
+      if (!drag.moved && Math.hypot(e.clientX - drag.px, e.clientY - drag.py) < 3) return;
+      drag.moved = true;
+      var p = drag.part, m = toMM(e.clientX, e.clientY);
+      var cx2 = snap(drag.origin[0] + m[0] - drag.start[0]), cy2 = snap(drag.origin[1] + m[1] - drag.start[1]);
+      if (fitsRegion(p, cx2, cy2, p.rot)) { drag.lastValid = [cx2, cy2]; setPose(p, cx2, cy2, p.rot); }
+      else if (!drag.lastValid) { setPose(p, cx2, cy2, p.rot); }
+      else {
+        var lv = drag.lastValid, best = null;
+        [[cx2, lv[1]], [lv[0], cy2]].forEach(function (c) {
+          if (fitsRegion(p, c[0], c[1], p.rot)) {
+            var dd = Math.hypot(c[0] - cx2, c[1] - cy2);
+            if (!best || dd < best[2]) best = [c[0], c[1], dd];
+          }
+        });
+        if (!best) {             // slide toward the pointer as far as the region allows
+          var lo = 0, hi = 1;
+          for (var i = 0; i < 14; i++) {
+            var mid = (lo + hi) / 2;
+            if (fitsRegion(p, lv[0] + (cx2 - lv[0]) * mid, lv[1] + (cy2 - lv[1]) * mid, p.rot)) lo = mid; else hi = mid;
+          }
+          var sx = snap(lv[0] + (cx2 - lv[0]) * lo), sy = snap(lv[1] + (cy2 - lv[1]) * lo);
+          best = fitsRegion(p, sx, sy, p.rot) ? [sx, sy] : [lv[0], lv[1]];
+        }
+        drag.lastValid = [best[0], best[1]];
+        setPose(p, best[0], best[1], p.rot);
+        status(p.ref + ' is held inside region \u201C' + p.region + '\u201D.');
+      }
+      return;
+    }
+    if (pan) {
+      autoFit = false;
+      view.x = pan.vx - (e.clientX - pan.x) / view.s;
+      view.y = pan.vy - (e.clientY - pan.y) / view.s;
+      if (Math.hypot(e.clientX - pan.x, e.clientY - pan.y) > 3) pan.click = false;
+      applyView();
+    }
+  });
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pinch) { if (pointers.size < 2) pinch = null; return; }
+    if (drag.part) {
+      var p = drag.part;
+      var moved = drag.moved;
+      drag = { part: null };
+      if (moved) { commit(p); renderPanel(); renderMoved(); if (!$('status').textContent.startsWith(p.ref + ' is held')) status(''); }
+    }
+    if (pan) {
+      if (pan.click) select(null);
+      pan = null; svg.classList.remove('panning');
+    }
+  }
+  function cancelDrag() {
+    var p = drag.part;
+    if (p) setPose(p, drag.origin[0], drag.origin[1], p.rot);
+    drag = { part: null };
+  }
+  svg.addEventListener('pointerup', endPointer);
+  svg.addEventListener('pointercancel', function (e) { if (drag.part) cancelDrag(); endPointer(e); });
+  svg.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var f = Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0018));
+    zoomAt(f, e.clientX, e.clientY);
+  }, { passive: false });
+
+  // ------------------------------------------------------------------ keyboard
+  document.addEventListener('keydown', function (e) {
+    var t = e.target, tag = t && t.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var g = opts.grid * (e.shiftKey ? 10 : 1);
+    switch (e.key) {
+      case 'ArrowLeft': if (selected) { e.preventDefault(); nudge(-g, 0); } break;
+      case 'ArrowRight': if (selected) { e.preventDefault(); nudge(g, 0); } break;
+      case 'ArrowUp': if (selected) { e.preventDefault(); nudge(0, -g); } break;
+      case 'ArrowDown': if (selected) { e.preventDefault(); nudge(0, g); } break;
+      case 'r': rotateSel(90); break;
+      case 'R': rotateSel(-90); break;
+      case '+': case '=': zoomAt(1.25); break;
+      case '-': case '_': zoomAt(0.8); break;
+      case '0': autoFit = true; fit(); break;
+      case 'Escape': select(null); break;
+      default: return;
+    }
+  });
+
+  // ------------------------------------------------------------------ controls
+  function setSide(s) { opts.side = s; pref('side', s); sideClasses(); if (selected && readOnlyPart(selected)) select(null); else renderPanel(); }
+  ['F', 'B', 'both'].forEach(function (s) { $('view-' + s).addEventListener('click', function () { setSide(s); }); });
+  $('zoom-in').addEventListener('click', function () { zoomAt(1.4); });
+  $('zoom-out').addEventListener('click', function () { zoomAt(1 / 1.4); });
+  $('zoom-fit').addEventListener('click', function () { autoFit = true; fit(); });
+  $('btn-rot90').addEventListener('click', function () { rotateSel(90); });
+  $('btn-rotm90').addEventListener('click', function () { rotateSel(-90); });
+  $('btn-rot45').addEventListener('click', function () { rotateSel(45); });
+  $('grid').addEventListener('change', function () { opts.grid = +this.value; pref('grid', opts.grid); renderPanel(); });
+  function toggle(id, key, cls, inverse) {
+    var cb = $(id);
+    cb.addEventListener('change', function () {
+      opts[key] = cb.checked; pref(key, cb.checked);
+      if (cls) svg.classList.toggle(cls, inverse ? !cb.checked : cb.checked);
+      if (key === 'power') updateNets(nets);
+    });
+  }
+  toggle('t-rats', 'rats', 'hide-rats', true);
+  toggle('t-power', 'power');
+  toggle('t-draw', 'drawings', 'hide-drawings', true);
+  toggle('t-labels', 'labels', 'hide-labels', true);
+  function numInput(id, which) {
+    $(id).addEventListener('change', function () {
+      var p = selected, v = parseFloat(this.value);
+      if (!p || !isFinite(v)) { renderPanel(); return; }
+      var x = p.x, y = p.y, r = p.rot;
+      if (which === 'x') x = v; else if (which === 'y') y = v; else r = v;
+      if (tryPose(p, x, y, r, which === 'rot' ? 'rotate' : 'move')) { commit(p); renderMoved(); }
+      renderPanel();
+    });
+  }
+  numInput('inp-x', 'x'); numInput('inp-y', 'y'); numInput('inp-rot', 'rot');
+  $('inp-note').addEventListener('input', function () { noteDirty = true; });
+  $('btn-save-note').addEventListener('click', function () {
+    var p = selected; if (!p) return;
+    p.note = $('inp-note').value.trim();
+    noteDirty = false;
+    if (db && dbMode === 'live') { queueOp(p.ref, { type: 'set' }); status('Note saved for ' + p.ref + '.'); }
+    else status('Note kept for this visit only (saving is off here).');
+    renderMoved();
+  });
+  $('btn-reset-part').addEventListener('click', function () { if (selected) resetPart(selected); });
+  $('part-filter').addEventListener('input', function () { renderPartList(true); });
+  $('review-comment').addEventListener('input', function () { reviewDirty = true; });
+  $('btn-approve').addEventListener('click', function () { sendReview('approved'); });
+  $('btn-request').addEventListener('click', function () { sendReview('changes_requested'); });
+  if (window.ResizeObserver) new ResizeObserver(function () { if (autoFit && L) fit(); else applyView(); }).observe(wrap);
+
+  // ------------------------------------------------------------------ load
+  function restorePrefs() {
+    var g = pref('grid'); if (g && [0.05, 0.1, 0.25, 0.5, 1].indexOf(g) >= 0) { opts.grid = g; $('grid').value = String(g); }
+    var s = pref('side'); if (s === 'F' || s === 'B' || s === 'both') opts.side = s;
+    [['t-rats', 'rats', 'hide-rats'], ['t-power', 'power', null], ['t-draw', 'drawings', 'hide-drawings'], ['t-labels', 'labels', 'hide-labels']].forEach(function (a) {
+      var v = pref(a[1]); if (typeof v === 'boolean') { opts[a[1]] = v; $(a[0]).checked = v; }
+      if (a[2]) svg.classList.toggle(a[2], !opts[a[1]]);
+    });
+  }
+  function init(layout) {
+    L = layout;
+    var fps = L.footprints || [];
+    var meta = [L.board, fps.length + ' parts', (L.ratsnest || []).length + ' nets'];
+    if (L.exported) meta.push('exported ' + L.exported);
+    $('meta').textContent = meta.join(' \u00B7 ');
+    drawStatic();
+    var gF = $('g-parts-F'), gB = $('g-parts-B');
+    var fragF = document.createDocumentFragment(), fragB = document.createDocumentFragment();
+    fps.forEach(function (f) {
+      var p = { ref: f.ref, value: f.value || '', footprint: f.footprint || '', side: f.side === 'B' ? 'B' : 'F',
+                x: +f.x, y: +f.y, rot: +f.rot || 0, ox: +f.x, oy: +f.y, orot: +f.rot || 0,
+                cls: f['class'] === 'fixed' || f['class'] === 'region' ? f['class'] : 'free', region: f.region || null,
+                locked: !!f.locked, bbox: f.bbox, courtyard: f.courtyard || [], pads: f.pads || [], note: '', nets: new Set() };
+      parts.push(p); byRef.set(p.ref, p);
+      (p.side === 'B' ? fragB : fragF).appendChild(buildPart(p));
+    });
+    gF.appendChild(fragF); gB.appendChild(fragB);
+    parts.forEach(function (p) {
+      p.pads.forEach(function (pd) {
+        if (!pd.net) return;
+        var info = (L.nets || {})[pd.net] || {};
+        var n = nets.get(pd.net);
+        if (!n) { n = { name: pd.net, power: !!info.power, members: [], path: null }; nets.set(pd.net, n); }
+        n.members.push({ part: p, pad: pd });
+        p.nets.add(n);
+      });
+    });
+    nets.forEach(function (n) { if (n.members.length < 2) nets.delete(n.name); });
+    parts.forEach(function (p) { p.nets.forEach(function (n) { if (!nets.has(n.name)) p.nets.delete(n); }); });
+    parts.forEach(function (p) { if (p.cls === 'region' && regions.has(p.region)) p.g.classList.toggle('bad', !fitsRegion(p, p.x, p.y, p.rot)); });
+    updateNets(nets);
+    var w = L.warnings || [];
+    if (w.length) {
+      $('notes-card').hidden = false; $('notes-count').textContent = '(' + w.length + ')';
+      w.forEach(function (s) { $('notes-list').appendChild(h('li', null, s)); });
+    }
+    $('empty').hidden = true;
+    sideClasses();
+    fit();
+    renderPartList(true); renderMoved(); renderPanel(); renderReview();
+  }
+  restorePrefs();
+  renderReview();
+  fetch('layout.json', { cache: 'no-cache' }).then(function (r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function (layout) {
+    init(layout);
+    connect();
+  }).catch(function (err) {
+    var e = $('empty'); e.textContent = '';
+    e.appendChild(h('div', 'big', 'Couldn\u2019t load the board.'));
+    e.appendChild(h('div', null, 'layout.json must be published beside this page (' + (err && err.message ? err.message : 'unknown error') + ').'));
+    $('meta').textContent = 'No layout';
+    connect();
+  });
+})();
+</script>

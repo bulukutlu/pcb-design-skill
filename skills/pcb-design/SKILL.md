@@ -221,8 +221,29 @@ decoupling and crystal distance limits + group cohesion + fan-out room in front 
 fine-pitch parts + congestion. Read its escape-lane and reachability reports: a
 fine-pitch face that has fewer lanes than nets is a placement problem no router setting
 fixes.
-Run the routability estimate. Exit: no region above ~70 % channel demand, crossing count
-acceptable, no escape-lane deficit.
+Run the routability estimate.
+
+**Placement review (human checkpoint, after the first placement and before any
+routing).** Show the user the placement on an interactive board, not a screenshot or a
+Markdown table, and let them move parts themselves:
+1. `scripts/placement_board.py export <board> -o <dir>` writes `layout.json` (outline,
+   every footprint with its courtyard, side, rotation and G4 class Fixed / Region /
+   Free, regions and keep-outs, ratsnest lines) and `index.html`.
+2. Publish `index.html` with `layout.json` beside it as an Artifact with the `db`
+   capability. The page draws the board to scale; the user drags and rotates Region
+   and Free parts (Fixed parts are locked, Region parts are held to their region), sees
+   the ratsnest update, leaves notes on parts, and presses Approve or Request changes.
+   Each move is stored as millimetres and degrees in the artifact's store.
+3. Read the moves back (`ArtifactData` list of the `moves` and `review` collections),
+   save them as JSON and run `scripts/placement_board.py apply <board> <moves.json> -o
+   <new board>`. Re-run the placement checks and DRC on the result, republish the
+   board for another round if anything moved, and continue to routing only after the
+   user approves on the page or in chat. Record each round in `design-notes.md`.
+Use the same board for any later placement question (for example moving testpoints
+at G7), so the user always answers on the layout itself.
+
+Exit: no region above ~70 % channel demand, crossing count acceptable, no escape-lane
+deficit, placement approved by the user.
 
 ### G6 — Routing with the placement loop
 1. Route critical nets by hand or under tight constraints, in order: power hot loops →
@@ -238,6 +259,17 @@ acceptable, no escape-lane deficit.
    / pin assignment first** and re-route. Do not loosen `--escalation` or the DRC preset
    to close the last nets; report them. Log each iteration in `design-notes.md`.
 5. Add a layer only if all four conditions in `references/placement-routing-loop.md` hold.
+6. **Trace clean-up pass** (every time, after the last routing iteration and before pours
+   and teardrops): run `scripts/trace_cleanup.py` on the board copy. It finds and fixes
+   router and generator artefacts: jogs, doglegs and U-turns that no obstacle forces,
+   collinear segment chains, tiny stubs, and 90° corners. Corners are chamfered to 45°
+   wherever clearance allows (default house rule: 45° everywhere, also on slow nets);
+   inside fine-pitch pad rows where parallel 45° fan-outs do not fit (0.5 mm pitch and
+   below, see `references/flex-fpc.md`) it keeps straight drops and chamfers after the
+   lanes spread. Fix scripted copper in its generator so the clean-up survives a
+   rebuild. Re-run DRC; the pass must not add a violation or an unconnected item.
+   Report corners and jogs before/after, and every one left with its reason. Look at a
+   zoomed render of the dense areas before closing G6.
 Then pour planes, stitch, add teardrops, check return paths.
 
 ### G7 — DRC / DFM / DFT audit
@@ -304,7 +336,9 @@ After boards exist, problems go into `docs/errata.md`; a new revision starts by 
 | No testability | Testpoint/LED/boot/reset checklist in G2 |
 | Editing files while KiCad has them open | Close/reload; IPC for live edits; no SWIG |
 | Trusting autorouter output | Critical nets manual; post-route DRC + metrics |
+| Router leftovers: unforced jogs, 90° corners, stubs | G6 step 6 trace clean-up pass (`scripts/trace_cleanup.py`) and a zoomed render review |
 | Router reaches 100 % by shrinking features or rewriting the project rules | `--escalation board --no-fix-drc-settings`; grade against the original `.kicad_pro` |
+| Placement shown as a static picture, user cannot answer on the layout | Interactive placement board at the G5 checkpoint (`scripts/placement_board.py`) |
 | Moving a part the user needs fixed | Fixed / Region / Free table from G4 before any placement run |
 | Building a new router or placer instead of using the installed one | Tooling facts; "Measured baselines" |
 | Component without a 3D model, or a downloaded model used unchecked | "3D models" section: library → manufacturer → online → recreate from the datasheet drawing; verify dimensions and origin |
@@ -399,6 +433,12 @@ Scripts:
   rotated text, reference designator gaps).
 - `scripts/drc_summary.py` — summarises a `kicad-cli pcb drc --format json` report and
   counts unrouted nets, for the routing loop metrics.
+- `scripts/placement_board.py` — interactive placement review: `export` turns a board
+  into `layout.json` plus a draggable to-scale Artifact page; `apply` writes the
+  user's moves back into a board copy.
+- `scripts/trace_cleanup.py` — post-route clean-up: straightens unforced jogs, merges
+  collinear segments, removes stubs, chamfers 90° corners to 45° where clearance
+  allows; reports before/after counts and what it left. Writes a new board file.
 - `scripts/thermal_check.py` — junction temperature and cooling decision per part.
 - `scripts/new_project.py` — creates the standard project folder with starter documents.
 - `scripts/release.py` — freezes one revision's manufacturing outputs; refuses on DRC
