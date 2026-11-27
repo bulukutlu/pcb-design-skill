@@ -57,7 +57,9 @@ README, test records and any summary written for a person.
 | Board-level static timing | ADC↔FPGA, memory, parallel buses | Python script under `sim/timing/`, vendor STA | Setup and hold slack |
 | Clearance and creepage | > 30 V anywhere, mains, bias supplies | `hv-safety.md` tables, `.kicad_dru` rule | Working voltage, pollution degree, required vs actual |
 | Junction temperatures and cooling decision | Every part dissipating > ~0.25 W | `scripts/thermal_check.py`; Elmer + Gmsh when marginal | P, θ_JA used and why, T_j at max ambient, margin |
-| Inductor and capacitor stress (SMPS) | Each converter | Datasheet equations, ngspice | Ripple current, saturation margin, RMS cap current, DC-bias derating |
+| Inductor and capacitor stress (SMPS) | Each converter | Datasheet equations, ngspice | Ripple current, I_sat vs peak current at max temperature (`smps-emi.md` §2), RMS cap current, DC-bias derating |
+| Crystal load capacitors and oscillator margin | Every crystal (not needed for oscillator modules) | Hand calculation, crystal and MCU datasheets | C1 = C2 = 2·(C_L − C_stray), C_stray ≈ 3–5 pF (pin + trace); chosen E-series value and resulting C_L error in ppm; drive level vs crystal rating; gain margin or negative resistance ≥ 5× ESR where the MCU vendor gives the formula (e.g. ST AN2867). Use C0G caps |
+| I²C (open-drain) pull-up values | Every I²C / SMBus / open-drain bus | Hand calculation | Bus capacitance C_b (pins + trace ≈ 0.1 pF/mm + cable); R_max = t_r / (0.8473·C_b) with t_r = 1000 / 300 / 120 ns for 100 k / 400 k / 1 MHz; R_min = (V_DD − V_OL) / I_OL (3 mA standard/fast, 20 mA Fm+); chosen value between them; only one set of pull-ups per bus segment, including those on modules |
 | Hot-loop area and switch-node review | Each converter | `smps-emi.md` §7 checklist | Loop description, measures taken |
 | Protection sizing (fuse I²t, TVS clamp, inrush) | Every power input and external interface | Datasheet curves, ngspice | Let-through vs downstream absolute maximum |
 | Resistor power and voltage derating | Dividers, shunts, bleeders, HV strings | Hand calculation | P vs rating, V vs rating |

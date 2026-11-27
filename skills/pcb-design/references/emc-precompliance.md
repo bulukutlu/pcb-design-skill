@@ -18,6 +18,11 @@ Sources: Ott, Hubing/LearnEMC, Armstrong, Montrose, Bogatin.
 - Crystals/oscillators: short traces, ground pour around (stitched), away from edges
   and connectors.
 - Minimise loop area of every high di/dt path (SMPS, drivers, LED PWM, motor).
+- On-board antennas (radio modules, chip and PCB-trace antennas): keep-out on all
+  layers as the vendor specifies, switchers and clocks away from it, RF feed as a
+  controlled 50 Ω line with ground vias along both sides, and a π-match footprint
+  (DNP parts) between radio and antenna so it can be tuned on the real board and
+  enclosure (`placement-routing-loop.md` §1).
 
 ## 2. ESD / transients
 - TVS/ESD diodes **at the connector**, with the shortest, lowest-inductance path to

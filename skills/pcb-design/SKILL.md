@@ -134,6 +134,9 @@ Follow `references/schematic-style.md` strictly. Summary:
   pull-ups, filters are wired next to their pins.
 - Net names, reference designators per sheet (sheet 2 → 2xx), MPN/LCSC/DNP fields,
   design-intent notes ("place C5 ≤1 mm from U3.7").
+- Calculate support-part values, never copy "typical" ones: crystal load caps, I²C
+  pull-ups, inductor I_sat, capacitor dielectric and voltage derating
+  (`references/design-report.md` §2, `references/dfm-fab.md` §6).
 - Include DFT parts now (`references/dft-bringup.md`): testpoints, status LEDs, reset and
   boot buttons/straps, debug header, 0 Ω/jumper rail isolation, current shunt.
 - After **each sheet**: export SVG (`kicad-cli sch export svg`), look at it, and run
@@ -407,12 +410,12 @@ document and the sub-skills; do not reconstruct its contents from memory.
 | `references/schematic-style.md` | Drawing or reviewing any schematic |
 | `references/placement-routing-loop.md` | Placement, routability, routing, layer count |
 | `references/high-speed.md` | Edge rates < ~5 ns, diff pairs, LVDS/USB/PCIe/DDR, impedance |
-| `references/power-pdn.md` | Power tree, decoupling, current capacity, grounding, protection |
+| `references/power-pdn.md` | Power tree, decoupling, current capacity, grounding, protection, USB-C power input |
 | `references/smps-emi.md` | Any switching converter or noisy driver |
 | `references/hv-safety.md` | > 30 V anywhere, mains, isolation, detector bias |
 | `references/emc-precompliance.md` | ESD/EMI layout rules and pre-compliance testing |
 | `references/eu-regulatory.md` | CE, LVD, EMC, RED, RoHS, CRA, lab-equipment status |
-| `references/dfm-fab.md` | Fab rules, stackups, DRC presets, assembly, parts |
+| `references/dfm-fab.md` | Fab rules, stackups, laminate and finish, DRC presets, special fab options, assembly, parts and capacitor dielectrics |
 | `references/dft-bringup.md` | Testpoints, LEDs, boot/reset, debug, bring-up plan |
 | `references/simulation-playbook.md` | SPICE in KiCad/ngspice, failure cases, Monte Carlo |
 | `references/design-report.md` | Which calculations and simulations are required, with which tool, and the report layout; reports are visual |

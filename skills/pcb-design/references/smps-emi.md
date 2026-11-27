@@ -24,6 +24,12 @@ Würth "Trilogy of Magnetics"; ADI LTC hot-loop notes.
 - FB divider near the IC FB pin; sense taken at the output cap / load point; route the
   sense trace away from the inductor; Kelvin connection for current sense.
 - Shielded inductors; check orientation (start of winding to switch node where marked).
+- Inductor current rating against the **peak**, not the average: I_pk = I_out(max) +
+  ΔI_L/2 (or the converter's current-limit threshold, if the output can be shorted).
+  Require I_sat ≥ 1.2–1.3 × I_pk at the hottest inductor temperature (ferrite I_sat
+  falls with temperature; check the vendor curve), and I_rms rating ≥ I_out(max) for the
+  self-heating ΔT you accept. Ferrite saturates abruptly; powdered/composite cores soften
+  gradually and tolerate less margin.
 
 ## 3. Snubbers and edge control
 - RC snubber across low-side FET/diode: start with C_snub ≈ 3–4 × switch-node parasitic

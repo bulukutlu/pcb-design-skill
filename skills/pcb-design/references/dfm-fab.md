@@ -37,6 +37,17 @@ annular ring figures 0.10–0.25 mm across pages.
   cost more and take longer — only for real SI/HV needs.
 - Controlled impedance: order impedance control if any net needs it; put target values,
   layers and reference planes on the fab drawing.
+- Laminate: standard FR-4 (Tg ≈ 130–140 °C) is fine for most 1.6 mm boards with one
+  or two lead-free reflows. Order high-Tg (≥ 170 °C) for 6+ layers, boards ≥ 2 mm,
+  double-sided reflow plus rework, heavy copper, or operation above ~100 °C.
+- Surface finish: choose it and write it on the fab drawing.
+
+| Finish | Choose when | Avoid when |
+|---|---|---|
+| HASL lead-free | Cheapest; through-hole and ≥ 0.65 mm pitch SMT; hand-soldered prototypes | Fine pitch (≤ 0.5 mm), QFN/BGA, LGA: pads are domed and uneven |
+| ENIG | Fine pitch, QFN/BGA/LGA, flat pads for stencil printing, exposed contact pads (keypads, probe pads), flex | Strong magnetic fields (nickel, see `optional-studies.md`); very tight budgets |
+| Hard gold (edge fingers) | Card-edge connectors that are inserted repeatedly | Anything soldered (order it on the fingers only, with bevel) |
+| OSP / immersion silver | Volume production with short storage | Prototypes that sit on a shelf; multiple reflows |
 
 ## 5. Assembly (DFA)
 - Fiducials: 3 per board (or per panel): 1 mm copper dot, 2 mm mask opening, no silk.
@@ -60,19 +71,43 @@ annular ring figures 0.10–0.25 mm across pages.
   alternates in fields. For JLC assembly prefer "Basic" parts (no feeder fee);
   check stock in the JLC parts library.
 - Use common values (E12/E24, standard MLCC values) to reduce line items.
-- Derate: capacitors ≥ 1.5–2× voltage for MLCC (DC bias), resistors ≤ 50–60 % power,
-  semiconductors per thermal check.
+- Capacitor dielectric by job:
+  - C0G/NP0 (≤ ~10 nF in small packages): crystal load caps, filters, timing, sample-hold,
+    compensation, anything where value matters. Stable with voltage and temperature.
+  - X7R (−55…125 °C) / X5R (−55…85 °C): decoupling and bulk. Use the capacitance *at the
+    working DC bias* from the vendor tool (Murata SimSurfing, TDK, Samsung), not the
+    nominal value. Never for timing or filter corners. Y5V/Z5U: do not use.
+  - Aluminium electrolytic / polymer: bulk and filter damping; check ripple current and
+    lifetime at temperature (life doubles per 10 °C below rating).
+  - Tantalum (MnO2): avoid on low-impedance rails; it fails short and burns on inrush.
+    If used, ≥ 2× voltage derating or a series resistance / soft-start. Polymer tantalum
+    needs ~1.25× (≤ 10 V) to 1.5×.
+- Derate: MLCC voltage ≥ 1.5–2× working (DC bias), aluminium electrolytic ≥ 1.25–1.5×,
+  tantalum as above, resistors ≤ 50–60 % power, semiconductors per thermal check.
+- Package size follows who solders (G0): hand-assembled prototypes use 0603 passives
+  and leaded or exposed-pin ICs where a choice exists; 0402 is the floor for rework by
+  hand; 0201 and BGA only with machine assembly.
 - KiCost / KiBot can query prices and availability.
 
 ## 7. Fab output package
 Gerbers (RS-274X/X2) + Excellon drill, IPC-D-356 netlist (bare-board test), drill map,
 fab drawing (stackup, material, finish, Cu weights, impedance table, coating, special
 notes), pick-and-place, BOM, assembly drawing. ODB++/IPC-2581 if the fab supports it.
+
+Special fab options are separate order-page choices and cost extra; put each one on the
+fab drawing *and* in `ORDER.md`, or it will not be made:
+- **Castellated (plated half) holes** for modules soldered onto a carrier: drill
+  ≥ 0.5–0.6 mm (check the fab), on the board edge with the outline through the hole
+  centre, pitch ≥ ~1 mm, no copper pour reaching the routed edge between them.
+  Usually needs ≥ 2 castellated sides or a panel tab arrangement the fab accepts.
+- Edge plating, plated slots, countersinks, blind/buried vias, via-in-pad filling,
+  gold fingers with bevel, impedance control, stiffeners (flex).
 Open gerbers in a viewer (KiCad gerbview or gerbv) before upload.
 
 ## 8. DFM checklist
 - [ ] Preset from fab page (URL/date recorded)
-- [ ] Stackup = fab standard (or justified custom)
+- [ ] Stackup = fab standard (or justified custom); laminate Tg and surface finish chosen
+- [ ] Special options (castellation, edge plating, filled vias, gold fingers) on drawing and in `ORDER.md`
 - [ ] No acute angles, no slivers, no copper islands without stitching
 - [ ] Annular rings, drill sizes, edge clearances OK
 - [ ] Silk legible, off pads; board name/rev/date on silk

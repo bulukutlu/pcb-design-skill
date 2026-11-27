@@ -64,6 +64,16 @@ design-notes.md and on the root schematic sheet.
 - Overvoltage/transients: TVS at the input connector (stand-off > max normal input,
   clamp < downstream abs max), possibly OVP controller.
 - Undervoltage: supervisor/reset IC with defined threshold and hysteresis.
+- USB-C power input (sink without a PD controller):
+  - One 5.1 kΩ pull-down **per CC pin** (CC1 and CC2 each). A single resistor shared by
+    both pins is not detected by compliant sources and the board gets no VBUS.
+  - Without PD you may draw only what the source advertises on CC (default USB power,
+    1.5 A or 3 A at 5 V); read it with a comparator or a CC-detect IC if you need more
+    than 500 mA. More than 5 V needs a PD sink controller.
+  - VBUS → fuse or eFuse → TVS (stand-off ≥ 5.5 V, or ≥ 20 V if PD can negotiate it)
+    → bulk capacitance within the USB inrush limit (≤ 10 µF at attach unless soft-started).
+  - ESD diodes on D+/D− and CC at the connector; connector shell to ground through the
+    chosen chassis bond (`emc-precompliance.md` §1).
 - Simulate each of these (simulation-playbook.md).
 
 ## 9. Bring-up friendliness

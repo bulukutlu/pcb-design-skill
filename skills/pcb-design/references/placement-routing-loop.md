@@ -19,6 +19,12 @@ until routing proves it works.
    - Termination resistors at the receiver (parallel) or driver (series).
    - ESD/TVS directly at the connector.
    - AC-coupling caps where the interface guide says.
+   - Radio modules and chip antennas: antenna at a board edge (corner for most chip
+     antennas), oriented as in the module datasheet, with the vendor's keep-out free of
+     copper, traces, vias and parts **on every layer**, and nothing tall or metal
+     (connectors, batteries, enclosure screws, shields) beside it. Copy the vendor's
+     reference layout and ground-plane size; the antenna is tuned to it. A module whose
+     antenna overhangs the edge must overhang, not sit over copper.
 4. **Orientation pass** — rotate/mirror ICs and connectors so ratsnest lines are short
    and do not cross. Change connector pinouts (if you own both ends), swap gates/pins
    (KiCad 10 pin/gate swap), reassign FPGA/MCU pins (update the schematic).
